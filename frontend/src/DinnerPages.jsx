@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Button from './components/Button';
 import TextInput from './components/TextInput';
 import TextArea from './components/TextArea';
@@ -6,6 +6,8 @@ import JsonTable from './components/JsonTable';
 import { createDinner, deleteDinner, fetchDinnerById, fetchDinners } from './map/api';
 import { useTips } from './components/Tips';
 import useDarkMode from './utils/useDarkMode';
+import MapView from './Map';
+import Tooltip from './components/Tooltip';
 
 function formatDateTime(value) {
     if (!value) return '时间待定';
@@ -155,8 +157,9 @@ export function DinnerListPage({ backendUrl, onGoCreate, onOpenDetail, onGoHome 
     );
 }
 
-export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequireAuth, onBack }) {
+export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequireAuth, onBack, onMapPickerOpenChange }) {
     const dark = useDarkMode();
+    const dateInputRef = useRef(null);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [placeName, setPlaceName] = useState('');
@@ -165,6 +168,28 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
     const [contactInfo, setContactInfo] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [pickerOpen, setPickerOpen] = useState(false);
+
+    useEffect(() => {
+        if (typeof onMapPickerOpenChange === 'function') {
+            onMapPickerOpenChange(pickerOpen);
+        }
+    }, [pickerOpen, onMapPickerOpenChange]);
+
+    useEffect(() => {
+        if (!pickerOpen) return;
+        const onKey = (e) => {
+            if (e.key === 'Escape') setPickerOpen(false);
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [pickerOpen]);
+
+    useEffect(() => {
+        return () => {
+            if (typeof onMapPickerOpenChange === 'function') onMapPickerOpenChange(false);
+        };
+    }, [onMapPickerOpenChange]);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -192,6 +217,16 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
         }
     };
 
+    const openDatePicker = () => {
+        const input = dateInputRef.current;
+        if (!input) return;
+        if (typeof input.showPicker === 'function') {
+            input.showPicker();
+            return;
+        }
+        input.focus();
+    };
+
     return (
         <div style={pageStyle(dark)}>
             <div style={containerStyle()}>
@@ -200,11 +235,59 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                 </div>
 
                 <div style={cardStyle(dark)}>
-                    <p style={{ marginTop: 0, color: dark ? '#9fb3c8' : '#486581' }}>创建后会生成独立可分享链接，并带有活动 OG 预览卡片。</p>
+                    <p style={{ marginTop: 0, color: dark ? '#9fb3c8' : '#486581' }}>创建后会生成独立可分享链接</p>
+                    <style>{`
+                        .dinner-datetime-input::-webkit-calendar-picker-indicator {
+                            opacity: 0;
+                        }
+                        .dinner-datetime-input::-webkit-inner-spin-button,
+                        .dinner-datetime-input::-webkit-clear-button {
+                            display: none;
+                        }
+                    `}</style>
                     <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="活动标题（例如：周六晚东方同好局）" required maxLength={120} />
-                        <TextInput value={placeName} onChange={(e) => setPlaceName(e.target.value)} placeholder="聚餐地点" required maxLength={120} />
-                        <TextInput type="datetime-local" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <TextInput
+                                value={placeName}
+                                onChange={(e) => setPlaceName(e.target.value)}
+                                placeholder="聚餐地点"
+                                required
+                                maxLength={120}
+                                style={{ flex: 1 }}
+                            />
+                            <Tooltip text="从地图选择地点" placement="top">
+                                <Button
+                                    onClick={() => setPickerOpen(true)}
+                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff', border: 0 }}
+                                    aria-label="从地图选择地点"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 24 }}>location_on</span>
+                                </Button>
+                            </Tooltip>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <TextInput
+                                ref={dateInputRef}
+                                className="dinner-datetime-input"
+                                type="datetime-local"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                required
+                                style={{ flex: 1 }}
+                            />
+                            <Tooltip text="选择日期时间" placement="top">
+                                <Button
+                                    onClick={openDatePicker}
+                                    type="button"
+                                    aria-label="选择日期时间"
+                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff', border: 0 }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 24 }}>calendar_month</span>
+                                </Button>
+                            </Tooltip>
+                        </div>
                         <TextInput type="number" min={2} max={1000} value={maxParticipants} onChange={(e) => setMaxParticipants(e.target.value)} placeholder="人数上限（可选）" />
                         <TextInput value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} placeholder="联系方式（可选）" maxLength={200} />
                         <TextArea
@@ -230,6 +313,26 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                     </form>
                 </div>
             </div>
+
+            {pickerOpen && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 3500, background: dark ? '#0b1220' : '#f8fafc' }}>
+                    <MapView
+                        backendUrl={backendUrl}
+                        token={token}
+                        isAuthenticated={isAuth}
+                        onRequireAuth={onRequireAuth}
+                        onOpenDinnerCreate={() => { }}
+                        onOpenDinners={() => { }}
+                        pickerMode
+                        onPickPlace={(place) => {
+                            const picked = (place && (place.name || place.address)) ? (place.name || place.address) : '';
+                            if (picked) setPlaceName(picked);
+                            setPickerOpen(false);
+                        }}
+                        onPickerClose={() => setPickerOpen(false)}
+                    />
+                </div>
+            )}
         </div>
     );
 }

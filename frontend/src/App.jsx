@@ -78,6 +78,7 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem("token"));
     const [showAuth, setShowAuth] = useState(!localStorage.getItem("token"));
+    const [authPanelDisabled, setAuthPanelDisabled] = useState(false);
 
     const goPath = useCallback((path) => {
         if (typeof window === "undefined") return;
@@ -351,6 +352,7 @@ export default function App() {
                                 onRequireAuth={() => setShowAuth(true)}
                                 onCreated={(dinner) => goPath(`/dinners/${dinner.id}`)}
                                 onBack={() => goPath('/')}
+                                onMapPickerOpenChange={setAuthPanelDisabled}
                             />
                         )}
 
@@ -498,6 +500,7 @@ export default function App() {
                             onGoHome={() => goPath("/")}
                             pathname={pathname}
                             backendUrl={BACKEND_URL}
+                            interactionDisabled={authPanelDisabled}
                         />
 
                         {showAuth && (

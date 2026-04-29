@@ -4,7 +4,7 @@ import Tooltip from './Tooltip';
 import defaultAvatar from '../img/default.png';
 import useDarkMode from '../utils/useDarkMode';
 
-export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth, onOpenAdmin, onOpenSettings, onGoHome, onOpenDinners, onOpenDinnerCreate, pathname, backendUrl }) {
+export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth, onOpenAdmin, onOpenSettings, onGoHome, onOpenDinners, onOpenDinnerCreate, pathname, backendUrl, interactionDisabled = false }) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef(null);
     const menuRef = useRef(null);
@@ -36,6 +36,10 @@ export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth,
             document.removeEventListener('keydown', onKey);
         };
     }, [open]);
+
+    useEffect(() => {
+        if (interactionDisabled && open) setOpen(false);
+    }, [interactionDisabled, open]);
 
     useEffect(() => {
         return () => {
@@ -93,6 +97,7 @@ export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth,
     };
 
     const handleAvatarClick = (e) => {
+        if (interactionDisabled) return;
         if (!isAuth) {
             onOpenAuth && onOpenAuth();
             return;
@@ -105,23 +110,27 @@ export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth,
     };
 
     const handleAvatarMouseEnter = () => {
+        if (interactionDisabled) return;
         if (!isTouchDevice && isAuth) {
             cancelScheduledClose();
             setOpen(true);
         }
     };
     const handleAvatarMouseLeave = () => {
+        if (interactionDisabled) return;
         if (!isTouchDevice && isAuth) {
             scheduleClose();
         }
     };
     const handleMenuMouseEnter = () => {
+        if (interactionDisabled) return;
         if (!isTouchDevice && isAuth) {
             cancelScheduledClose();
             setOpen(true);
         }
     };
     const handleMenuMouseLeave = () => {
+        if (interactionDisabled) return;
         if (!isTouchDevice && isAuth) {
             scheduleClose();
         }
@@ -167,7 +176,7 @@ export default function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth,
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
+                    cursor: interactionDisabled ? 'default' : 'pointer',
                     boxShadow: dark ? '0 1px 3px rgba(0,0,0,0.6)' : '0 1px 3px rgba(0,0,0,0.15)',
                     overflow: 'hidden',
                     border: `3px solid ${themeColor}`,
