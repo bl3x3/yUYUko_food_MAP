@@ -1,9 +1,11 @@
 import React, { useRef, useState } from "react";
 import Button from "../components/Button";
+import useDarkMode from "../utils/useDarkMode";
 
 export default function PlaceImageInputs({ backendUrl, token, images, setImages, label }) {
     const fileInputRef = useRef(null);
     const [uploading, setUploading] = useState(false);
+    const dark = useDarkMode();
 
     const handleUploadClick = () => {
         if (fileInputRef.current) {
@@ -49,7 +51,16 @@ export default function PlaceImageInputs({ backendUrl, token, images, setImages,
 
     return (
         <div style={{ marginBottom: "15px" }}>
-            <div style={{ marginBottom: "5px", fontSize: "14px", fontWeight: "bold" }}>{label}</div>
+            <div
+                style={{
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    color: dark ? "#e5e7eb" : undefined
+                }}
+            >
+                {label}
+            </div>
 
             {images.map((url, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: 'center' }}>
