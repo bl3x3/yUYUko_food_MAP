@@ -3,10 +3,49 @@ export function createMarker(map, place) {
     const marker = new window.AMap.Marker({
         position: [place.longitude, place.latitude],
         title: place.name,
-        extData: place
+        extData: place,
+        content: buildMarkerContent(place.name),
+        offset: new window.AMap.Pixel(-10, -30)
     });
     // Do not automatically setMap here as we will use MarkerClusterer
     return marker;
+}
+
+function escapeHtml(input) {
+    return String(input)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildMarkerLabel(placeName) {
+    if (!placeName) return null;
+    const safeName = escapeHtml(placeName);
+    return {
+        content: `<div style="background: rgba(210,210,210,0.65); color: #111827; font-size: 12px; line-height: 16px; padding: 2px 8px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); white-space: nowrap;">${safeName}</div>`,
+        direction: 'bottom',
+        offset: new window.AMap.Pixel(0, 10),
+        style: {
+            background: 'transparent',
+            border: 'none',
+            padding: '0',
+            boxShadow: 'none',
+            borderRadius: '0'
+        }
+    };
+}
+
+function buildMarkerContent(placeName) {
+    const safeName = placeName ? escapeHtml(placeName) : '';
+    return `
+        <div style="display:flex;flex-direction:column;align-items:center;transform:translate3d(0,0,0);">
+            <div style="width:14px;height:14px;background:#3b82f6;border:2px solid #ffffff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #3b82f6;margin-top:-1px;"></div>
+            ${safeName ? `<div style=\"margin-top:5px;background:rgba(210,210,210,0.65);color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;\">${safeName}</div>` : ''}
+        </div>
+    `;
 }
 
 export function renderMarkers(map, markersRef, list, onClick) {
@@ -57,6 +96,8 @@ export function renderMarkers(map, markersRef, list, onClick) {
                 // 将 place 的信息注入到独立 Marker 以备用
                 marker.setTitle(place.name);
                 marker.setExtData(place);
+                marker.setContent(buildMarkerContent(place.name));
+                marker.setOffset(new window.AMap.Pixel(-10, -30));
 
                 // 直接向生成的单点 Marker 添加原生的 click 监听，规避 clusterData 无法提取的问题
                 marker.on('click', () => {
@@ -136,7 +177,9 @@ export function renderMarkers(map, markersRef, list, onClick) {
         markersRef.current.__cluster = cluster;
     } else {
         // 如果没有聚类插件，退回到平铺
-        created.forEach(marker => marker.setMap(map));
+        created.forEach(marker => {
+            marker.setMap(map);
+        });
     }
 
     return created;
