@@ -1,3 +1,5 @@
+import { isDarkMode } from '../utils/theme';
+
 export function createMarker(map, place) {
     if (!map || !window.AMap) return null;
     const marker = new window.AMap.Marker({
@@ -20,30 +22,14 @@ function escapeHtml(input) {
         .replace(/'/g, '&#39;');
 }
 
-function buildMarkerLabel(placeName) {
-    if (!placeName) return null;
-    const safeName = escapeHtml(placeName);
-    return {
-        content: `<div style="background: rgba(210,210,210,0.65); color: #111827; font-size: 12px; line-height: 16px; padding: 2px 8px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); white-space: nowrap;">${safeName}</div>`,
-        direction: 'bottom',
-        offset: new window.AMap.Pixel(0, 10),
-        style: {
-            background: 'transparent',
-            border: 'none',
-            padding: '0',
-            boxShadow: 'none',
-            borderRadius: '0'
-        }
-    };
-}
-
 function buildMarkerContent(placeName) {
     const safeName = placeName ? escapeHtml(placeName) : '';
+    const labelBg = isDarkMode() ? 'rgba(230,230,230,0.8)' : 'rgba(200,200,200,0.9)';
     return `
         <div style="display:flex;flex-direction:column;align-items:center;transform:translate3d(0,0,0);">
-            <div style="width:14px;height:14px;background:#3b82f6;border:2px solid #ffffff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>
+            <div style="width:14px;height:14px;background: #3b82f6;border:2px solid #ffffff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>
             <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #3b82f6;margin-top:-1px;"></div>
-            ${safeName ? `<div style=\"margin-top:5px;background:rgba(210,210,210,0.65);color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;\">${safeName}</div>` : ''}
+            ${safeName ? `<div style=\"margin-top:5px;background:${labelBg};color:#111827;font-size:14px;line-height:16px;padding:4px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;\">${safeName}</div>` : ''}
         </div>
     `;
 }
