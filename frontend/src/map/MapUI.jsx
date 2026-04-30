@@ -7,6 +7,7 @@ import PlaceDetailPanel from './PlaceDetailPanel';
 import useDarkMode from '../utils/useDarkMode';
 import { useSearchPanel } from './useSearchPanel';
 import ScrollableView from '../components/ScrollableView';
+import Notice from '../components/Notice';
 import { fetchFavorites } from './api';
 
 export default function MapUI(props) {
@@ -204,6 +205,10 @@ export default function MapUI(props) {
     return (
         <>
             <div ref={containerRef} id="map" style={{ width: "100%", height: "100%", position: "relative" }}></div>
+
+            {pickerMode && (
+                <Notice title="正在选择聚餐地点" tone="warning" />
+            )}
 
             <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
                 {/* 灰色遮罩，弹出搜索框时显示（位于控件下面） */}
@@ -485,7 +490,7 @@ export default function MapUI(props) {
                     )}
 
                     <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
-                        v1.2.9
+                        v1.2.10
                     </div>
                 </div>
             </div>
