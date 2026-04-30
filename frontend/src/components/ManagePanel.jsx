@@ -7,9 +7,9 @@ import useDarkMode from '../utils/useDarkMode';
 import ScrollableView from './ScrollableView';
 
 const CATEGORY_DATA = [
-    { group: '中餐厅', items: ['上海菜', '东北菜', '中式素菜馆', '中餐厅', '云贵菜', '北京菜', '台湾菜', '四川菜(川菜)', '安徽菜(徽菜)', '山东菜(鲁菜)', '广东菜(粤菜)', '江苏菜', '浙江菜', '清真菜馆', '湖北菜(鄂菜)', '湖南菜(湘菜)', '潮州菜', '火锅店', '福建菜', '西北菜'] },
+    { group: '中餐厅', items: ['中式素菜馆', '清真菜馆', '本帮菜', '东北菜', '云贵菜', '北京菜', '台湾菜', '川菜', '徽菜', '鲁菜', '粤菜', '苏菜', '浙菜', '鄂菜', '湘菜', '闽南菜', '火锅店', '闽北菜', '西北菜'] },
     { group: '休闲餐饮店', items: ['咖啡厅', '奶茶店', '甜品店', '茶艺馆'] },
-    { group: '外国餐厅', items: ['俄国菜', '印度风味', '地中海风格菜品', '墨西哥菜', '德国菜', '意式菜品餐厅', '日本料理', '法式菜品餐厅', '泰国/越南菜品餐厅', '牛扒店', '美式风味', '韩国料理', '其他国家'] },
+    { group: '外国餐厅', items: ['俄国菜', '南亚菜', '地中海风味', '墨西哥菜', '德国菜', '意大利菜', '日本料理', '法国菜', '东南亚菜', '牛扒店', '美式风味', '韩国料理', '其他国家'] },
     { group: '快餐厅', items: ['中式快餐', '西式快餐', '茶餐厅'] },
     { group: '宵夜小吃', items: ['烧烤', '排挡', '街边小摊'] },
     { group: '其他', items: ['其他'] },
@@ -54,6 +54,13 @@ export default function ManagePanel({
         .split(',')
         .map(s => s.trim())
         .filter(Boolean);
+
+    const getTagBackground = (group, isSelected) => {
+        if (!isSelected) return dark ? '#334155' : '#f1f5f9';
+        if (group === '休闲餐饮店') return '#0d9e63';
+        if (group === '避雷') return '#9e3d0d';
+        return '#0d7a9e';
+    };
 
     return (
         <div style={{
@@ -125,7 +132,7 @@ export default function ManagePanel({
                                                                 borderRadius: 14,
                                                                 whiteSpace: 'nowrap',
                                                                 cursor: 'pointer',
-                                                                background: isSelected ? '#3b82f6' : (dark ? '#334155' : '#f1f5f9'),
+                                                                background: getTagBackground(group.group, isSelected),
                                                                 color: isSelected ? '#fff' : (dark ? '#e2e8f0' : '#333'),
                                                                 border: `1px solid ${isSelected ? '#2563eb' : (dark ? '#475569' : '#cbd5e1')}`,
                                                                 flex: '0 0 auto'

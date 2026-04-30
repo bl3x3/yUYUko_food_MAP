@@ -485,7 +485,7 @@ export default function MapUI(props) {
                     )}
 
                     <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
-                        v1.2.8
+                        v1.2.9
                     </div>
                 </div>
             </div>
@@ -520,38 +520,34 @@ export default function MapUI(props) {
                                 <Button onClick={handlePickPlace} style={{ color: '#fff', border: 0 }}>选择此地点</Button>
                             </div>
                         ) : (
-                            <div style={{ marginTop: 8, textAlign: "right" }}>
+                            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
                                 {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
                                 { /*<Tooltip text="在这里留下你的评论">
                                     <Button onClick={openCommentPanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>评论</Button>
                                 </Tooltip>
                                 <span style={{ padding: 4 }}></span> */ }
                                 {selectedPlace.isMarked !== false && (
-                                    <>
-                                        <Tooltip text={favoriteIds && favoriteIds.has(selectedPlace.id) ? '取消收藏' : (isAuthenticated ? '收藏此地点' : '登录后可收藏')}>
-                                            <Button
-                                                onClick={() => onToggleFavorite && onToggleFavorite(selectedPlace)}
-                                                disabled={favoriteLoading}
-                                                style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : undefined), padding: '6px 10px', borderRadius: 4, lineHeight: 1 }}
-                                            >
-                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 14 }}>
-                                                    {favoriteIds && favoriteIds.has(selectedPlace.id) ? 'heart_minus' : 'heart_plus'}
-                                                </span>
-                                            </Button>
-                                        </Tooltip>
-                                        <span style={{ padding: 4 }}></span>
-                                    </>
+                                    <Tooltip text={favoriteIds && favoriteIds.has(selectedPlace.id) ? '取消收藏' : (isAuthenticated ? '收藏此地点' : '登录后可收藏')}>
+                                        <Button
+                                            onClick={() => onToggleFavorite && onToggleFavorite(selectedPlace)}
+                                            disabled={favoriteLoading}
+                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : undefined), padding: '6px 10px', borderRadius: 4, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
+                                                {favoriteIds && favoriteIds.has(selectedPlace.id) ? 'heart_minus' : 'heart_plus'}
+                                            </span>
+                                        </Button>
+                                    </Tooltip>
                                 )}
                                 <Tooltip text={selectedPlace.isMarked === false ? '创建此地点' : '管理此地点'}>
                                     {selectedPlace.isMarked === false ? (
-                                        <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>创建</Button>
+                                        <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>创建</Button>
                                     ) : (
-                                        <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>管理</Button>
+                                        <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>管理</Button>
                                     )}
                                 </Tooltip>
-                                <span style={{ padding: 4 }}></span>
                                 <Tooltip text="查看详情与图片">
-                                    <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>详情</Button>
+                                    <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>详情</Button>
                                 </Tooltip>
                             </div>
                         )}

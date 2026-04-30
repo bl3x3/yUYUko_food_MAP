@@ -94,7 +94,7 @@ export default function Button({ children, onClick, disabled, style, title, vari
             if (!themeColor) {
                 base.background = dark ? '#111827' : base.background;
             }
-            base.border = dark ? '1px solid #374151' : base.border;
+            base.border = dark ? '1px solid #374151' : '1px solid #e5e7eb';
             base.color = dark ? '#e5e7eb' : (base.color || 'inherit');
         }
     }
