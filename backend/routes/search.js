@@ -115,13 +115,13 @@ async function expandQueriesWithDeepseek(query, maxSuggestions = DEFAULT_DEEPSEE
     const content = await deepseekChat([
         {
             role: 'system',
-            content: 'You are a search assistant for a food map. The user is searching for a restaurant or food place. Generate 3-6 alternative Chinese search keywords that represent the SAME food type, cuisine, or dish category. Focus on semantic equivalents and common aliases - do NOT broaden to unrelated food types. Return ONLY a JSON array of strings.'
+            content: 'You are a food search query expander. Given a user query, generate 3-6 SPECIFIC alternative Chinese keywords that describe the SAME dish/cuisine. Use synonyms, regional names, or ingredient-based terms. NEVER generate generic terms like 餐厅, 美食, 料理, 饭店, 好吃, 推荐. Return ONLY a JSON array of strings.'
         },
         {
             role: 'user',
             content: `Query: ${query}`
         }
-    ], { temperature: 0.1, maxTokens: 180 });
+    ], { temperature: 0, maxTokens: 180 });
 
     const rawList = parseJsonArray(content);
     const originKey = normalizeText(query);
@@ -205,7 +205,7 @@ function buildAgentCandidates(places, center, maxCandidates, radiusMeters) {
             name: truncateText(p.name || '', 40),
             category: truncateText(p.category || '', 30),
             address: truncateText(p.address || '', 40),
-            description: truncateText(p.description || '', 50),
+            description: truncateText(p.description || '', 120),
             hasDescription: !!(p.description && p.description.toString().trim()),
             distanceMeters,
             place: p
@@ -244,13 +244,13 @@ async function selectAgentKeysFromCandidates(query, candidates, maxCount) {
     const content = await deepseekChat([
         {
             role: 'system',
-            content: 'You are a location recommender for a food map. Choose candidates that best match the user query. Prioritize candidates whose name/category/description clearly relate to the query. Candidates with "has_description": false have only a name — select them ONLY if the name is a clear and direct match for the query. Return ONLY a JSON array of candidate keys.'
+            content: 'You are a location recommender for a food map. Choose candidates that best match the user query by carefully reading each candidate\'s name, category AND description. A candidate is relevant if its description mentions the queried cuisine/dish, even if the name is not an obvious match. Candidates with "has_description": false have only a name — be very cautious and select them ONLY if the name is an unmistakable match for the query. Return ONLY a JSON array of candidate keys.'
         },
         {
             role: 'user',
             content: `Query: ${query}\nCandidates: ${JSON.stringify(payloadCandidates)}`
         }
-    ], { temperature: 0.1, maxTokens: 200 });
+    ], { temperature: 0, maxTokens: 200 });
 
     const rawKeys = parseJsonArray(content);
     const allowed = new Set(candidates.map((c) => c.key));
@@ -367,6 +367,10 @@ function shouldFallbackToDeepseek(term, matched, center) {
     const strongMatches = matched.filter(m => m.score >= 1.0);
     if (strongMatches.length >= 3) return false;
 
+    // 有足够的分类级别匹配时也不回退（如搜"粤菜"匹配分类字段）
+    const decentMatches = matched.filter(m => m.score >= 0.5);
+    if (decentMatches.length >= 5) return false;
+
     if (quality.bestScore < DEFAULT_DEEPSEEK_MIN_SCORE) return true;
     if (center && Number.isFinite(quality.nearestDistance) && quality.nearestDistance > DEFAULT_DEEPSEEK_FAR_DISTANCE_METERS) {
         return true;
@@ -384,10 +388,26 @@ function buildMatchesFromRows(rows, term, center) {
         const category = normalizeText(p.category || '');
         const description = normalizeText(p.description || '');
 
-        const nameContains = name.indexOf(t) !== -1 || t.indexOf(name) !== -1;
-        const categoryContains = category.indexOf(t) !== -1 || t.indexOf(category) !== -1;
-        const descContains = description.indexOf(t) !== -1 || t.indexOf(description) !== -1;
-        const nameSubseq = isSubsequence(t, name) || isSubsequence(name, t);
+        // 正向：搜索词是否出现在字段中（子串或子序列）
+        const nameContainsFwd = name.indexOf(t) !== -1;
+        const categoryContainsFwd = category.indexOf(t) !== -1;
+        const descContainsFwd = description.indexOf(t) !== -1;
+        const nameSubseqFwd = isSubsequence(t, name);
+
+        // 反向：字段是否出现在搜索词中 — 仅在字段足够长时启用，
+        // 防止短名称（如"火锅""餐厅""重庆"等 1-2 字词）在长搜索词中大量误匹配
+        const nameLongEnough = name.length >= 3;
+        const catLongEnough = category.length >= 3;
+        const descLongEnough = description.length >= 3;
+        const nameContainsRev = nameLongEnough && t.indexOf(name) !== -1;
+        const categoryContainsRev = catLongEnough && t.indexOf(category) !== -1;
+        const descContainsRev = descLongEnough && t.indexOf(description) !== -1;
+        const nameSubseqRev = nameLongEnough && isSubsequence(name, t);
+
+        const nameContains = nameContainsFwd || nameContainsRev;
+        const categoryContains = categoryContainsFwd || categoryContainsRev;
+        const descContains = descContainsFwd || descContainsRev;
+        const nameSubseq = nameSubseqFwd || nameSubseqRev;
 
         if (!nameContains && !nameSubseq && !categoryContains && !descContains) continue;
 
@@ -401,7 +421,7 @@ function buildMatchesFromRows(rows, term, center) {
             score = 0.7;
         } else if (categoryContains) {
             rank = 2;
-            score = 0.5;
+            score = (t === category) ? 0.85 : 0.5;
         } else if (descContains) {
             rank = 3;
             score = 0.4;
@@ -449,7 +469,7 @@ async function getAllPlaces(opts = {}) {
     const nearbyMin = opts.nearbyMin != null ? Number(opts.nearbyMin) : undefined;
     const allowDeepseek = opts.allowDeepseek !== false;
     const agentRecommend = opts.agentRecommend !== false;
-    const agentRecommendOnly = opts.agentRecommendOnly !== false;
+    const agentRecommendOnly = opts.agentRecommendOnly === true;
     const agentRecommendCount = Number.isFinite(opts.agentRecommendCount) ? Math.floor(opts.agentRecommendCount) : undefined;
     const agentMaxCandidates = Number.isFinite(opts.agentMaxCandidates) ? Math.floor(opts.agentMaxCandidates) : undefined;
     const agentRadiusMeters = Number.isFinite(opts.agentRadiusMeters) ? Math.floor(opts.agentRadiusMeters) : undefined;
@@ -495,7 +515,6 @@ async function getAllPlaces(opts = {}) {
 
     let prioritized = prioritizeNearbyMatches(matched, { center, limit, nearbyRadius, nearbyMin });
     let results = prioritized.map(m => m.place);
-    let deepseekFallbackUsed = false;
 
     if (allowDeepseek && shouldFallbackToDeepseek(term, matched, center)) {
         const suggestions = await expandQueriesWithDeepseek(q);
@@ -509,13 +528,8 @@ async function getAllPlaces(opts = {}) {
             const allMerged = mergeMatchesByPlace(allMatches);
             allMerged.sort(compareMatches);
             results = allMerged.map(m => m.place);
-            deepseekFallbackUsed = true;
         }
     }
-
-    // 当 DeepSeek fallback 已被触发时，不要用 agent 推荐替代全部结果，
-    // 而是将 agent 推荐合并到已有结果中，确保返回尽可能多的匹配
-    const effectiveAgentRecommendOnly = deepseekFallbackUsed ? false : agentRecommendOnly;
 
     if (agentRecommend) {
         const recommended = await recommendPlacesWithAgent(q, results, center, {
@@ -524,7 +538,7 @@ async function getAllPlaces(opts = {}) {
             radiusMeters: agentRadiusMeters
         });
         if (recommended.length > 0) {
-            if (effectiveAgentRecommendOnly) {
+            if (agentRecommendOnly) {
                 results = recommended;
             } else {
                 const seen = new Set();
