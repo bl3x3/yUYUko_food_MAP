@@ -4,7 +4,7 @@ const https = require('https');
 const { db } = require('../db');
 const { fuzzySearch } = require('../utils/fuzzySearch'); // 模糊搜索，保留字段
 
-const DEFAULT_NEARBY_RADIUS_METERS = 5000;
+const DEFAULT_NEARBY_RADIUS_METERS = 10000;
 const DEFAULT_NEARBY_MIN_COUNT = 5;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
 const DEEPSEEK_BASE_URL = (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '');
@@ -532,7 +532,8 @@ async function getAllPlaces(opts = {}) {
     }
 
     if (agentRecommend) {
-        const recommended = await recommendPlacesWithAgent(q, results, center, {
+        // 将所有地点传给 agent（不经过关键词筛选），由 agent 根据距离和语义自行判断
+        const recommended = await recommendPlacesWithAgent(q, rows, center, {
             maxCount: agentRecommendCount,
             maxCandidates: agentMaxCandidates,
             radiusMeters: agentRadiusMeters
