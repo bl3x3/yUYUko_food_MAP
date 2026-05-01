@@ -6,11 +6,12 @@ import AdminUsers from "./admin/AdminUsers";
 import AdminInvitecode from "./admin/AdminInvitecodes";
 import AdminComments from "./admin/AdminComments";
 import AdminGeneralUsers from "./admin/AdminGeneralUsers";
+import AdminQQWhitelist from "./admin/AdminQQWhitelist";
 import AdminAuditModal from "./admin/AdminAuditModal";
 
 const PERMISSIONS = {
-    YUYUKO: ["用户管理", "操作日志", "标记点管理", "邀请码管理", "评论管理"],
-    YOUMU: ["普通用户管理", "标记点管理", "邀请码管理", "评论管理"],
+    YUYUKO: ["用户管理", "操作日志", "标记点管理", "邀请码管理", "评论管理", "QQ白名单管理"],
+    YOUMU: ["普通用户管理", "标记点管理", "邀请码管理", "评论管理", "QQ白名单管理"],
     KOMACHI: ["普通用户管理", "评论管理"]
 };
 
@@ -24,6 +25,7 @@ export default function AdminDashboard({ user, token, backendUrl, onBackHome, on
     const canManageInvites = useMemo(() => perms.includes("邀请码管理"), [perms]);
     const canManageComments = useMemo(() => perms.includes("评论管理"), [perms]);
     const canManageGeneralUsers = useMemo(() => perms.includes("普通用户管理"), [perms]);
+    const canManageQQWhitelist = useMemo(() => perms.includes("QQ白名单管理"), [perms]);
     const canViewAudit = useMemo(() => perms.includes("操作日志"), [perms]);
 
     const dark = useDarkMode();
@@ -83,6 +85,13 @@ export default function AdminDashboard({ user, token, backendUrl, onBackHome, on
                 {canManageInvites && (
                     <div style={panelStyle}>
                         <AdminInvitecode backendUrl={backendUrl} token={token} user={user} onRequireAuth={onRequireAuth} />
+                    </div>
+                )}
+
+                {/* QQ白名单管理面板 */}
+                {canManageQQWhitelist && (
+                    <div style={panelStyle}>
+                        <AdminQQWhitelist backendUrl={backendUrl} token={token} user={user} onRequireAuth={onRequireAuth} />
                     </div>
                 )}
 

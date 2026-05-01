@@ -45,6 +45,16 @@ router.post("/register", (req, res) => {
                 return res.status(400).json({ error: "邀请码已超出最大可用次数" });
             }
 
+            // 校验QQ号是否已被其他账号使用
+            db.get("SELECT id FROM User WHERE qq = ?", [qq], (errQQUsed, usedRow) => {
+                if (errQQUsed) return res.status(500).json({ error: errQQUsed.message });
+                if (usedRow) return res.status(400).json({ error: "该QQ号已被其他账号绑定" });
+
+            // 校验QQ号是否在白名单中
+            db.get("SELECT id FROM QQWhitelist WHERE qq = ?", [qq], (errQQ, whitelistRow) => {
+                if (errQQ) return res.status(500).json({ error: errQQ.message });
+                if (!whitelistRow) return res.status(400).json({ error: "该QQ号不在注册白名单中，请联系管理员" });
+
             // 检验通过，用户注册逻辑
             const hashPwd = hashPassword(password);
             const userId = crypto.randomUUID();
@@ -75,6 +85,8 @@ router.post("/register", (req, res) => {
                     });
                 }
             );
+            });
+            });
         });
     });
 });

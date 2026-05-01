@@ -183,6 +183,12 @@ function init() {
         addIfMissing('qq TEXT');
         addIfMissing('avatar_blob BLOB');
 
+        try {
+            rawDb.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_qq ON User(qq);`);
+        } catch (e) {
+            console.warn('Failed to create idx_user_qq:', e.message);
+        }
+
         rawDb.exec(`CREATE TABLE IF NOT EXISTS "Place" (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
@@ -269,6 +275,17 @@ function init() {
             rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_invitecode_code ON InviteCode(code);`);
         } catch (e) {
             console.warn('Failed to create idx_invitecode_code:', e.message);
+        }
+
+        rawDb.exec(`CREATE TABLE IF NOT EXISTS "QQWhitelist" (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            qq TEXT UNIQUE NOT NULL,
+            created_time DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`);
+        try {
+            rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_qqwhitelist_qq ON QQWhitelist(qq);`);
+        } catch (e) {
+            console.warn('Failed to create idx_qqwhitelist_qq:', e.message);
         }
 
         rawDb.exec(`CREATE TABLE IF NOT EXISTS "DinnerEvent" (

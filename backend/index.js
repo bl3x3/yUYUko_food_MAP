@@ -16,6 +16,7 @@ const adminInvitesRouter = require("./routes/admin/adminInvites");
 const adminCommentsRouter = require("./routes/admin/adminComments");
 const adminGeneralUsersRouter = require("./routes/admin/adminGeneralUsers");
 const adminAuditRouter = require('./routes/admin/adminAudit');
+const adminQQWhitelistRouter = require('./routes/admin/adminQQWhitelist');
 const placeRequestsRouter = require("./routes/placeRequests");
 const dinnersRouter = require("./routes/dinners");
 const favoritesRouter = require("./routes/favorites");
@@ -153,6 +154,7 @@ app.use("/admin/invites", requireAuth, adminInvitesRouter);
 app.use("/admin/comments", requireAuth, adminCommentsRouter);
 app.use("/admin/general-users", requireAuth, adminGeneralUsersRouter);
 app.use("/admin/audit", requireAuth, adminAuditRouter);
+app.use("/admin/qq-whitelist", requireAuth, adminQQWhitelistRouter);
 
 
 init();
