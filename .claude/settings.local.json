@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\yUYUko_food_MAP\" -Depth 0)",
+      "Bash(Format-Table Name, Mode -AutoSize)"
+    ]
+  }
+}

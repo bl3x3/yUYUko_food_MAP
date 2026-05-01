@@ -1,4 +1,5 @@
 import { isDarkMode } from '../utils/theme';
+import { haversineDistanceMeters } from './utils';
 
 export function createMarker(map, place) {
     if (!map || !window.AMap) return null;
@@ -45,6 +46,43 @@ function buildClusterContent(count) {
             ${count}
         </div>
     `;
+}
+
+const MIN_CLUSTER_ZOOM = 10;
+const MAX_CLUSTER_ZOOM = 18;
+
+function getClusterRadius(zoom) {
+    if (!Number.isFinite(zoom) || zoom < MIN_CLUSTER_ZOOM) return 5000;
+    if (zoom <= 10) return 5000;
+    if (zoom <= 11) return 2500;
+    if (zoom <= 12) return 1200;
+    if (zoom <= 13) return 600;
+    if (zoom <= 14) return 300;
+    if (zoom <= 15) return 150;
+    if (zoom <= 16) return 75;
+    if (zoom <= 17) return 40;
+    if (zoom <= 18) return 20;
+    return 0;
+}
+
+class UnionFind {
+    constructor(n) {
+        this.parent = new Array(n);
+        this.rank = new Array(n).fill(0);
+        for (let i = 0; i < n; i++) this.parent[i] = i;
+    }
+    find(x) {
+        if (this.parent[x] !== x) this.parent[x] = this.find(this.parent[x]);
+        return this.parent[x];
+    }
+    union(x, y) {
+        const px = this.find(x);
+        const py = this.find(y);
+        if (px === py) return;
+        if (this.rank[px] < this.rank[py]) this.parent[px] = py;
+        else if (this.rank[px] > this.rank[py]) this.parent[py] = px;
+        else { this.parent[py] = px; this.rank[px]++; }
+    }
 }
 
 function getPixelPoint(map, lng, lat) {
@@ -174,7 +212,6 @@ export function renderMarkers(map, markersRef, list, onClick) {
         markersRef.current.push(marker);
         created.push(marker);
     });
-    const gridSize = 60;
     const renderClusters = () => {
         // 清理上一次聚类渲染
         if (markersRef.current.__cluster && markersRef.current.__cluster.clusterMarkers) {
@@ -182,57 +219,98 @@ export function renderMarkers(map, markersRef, list, onClick) {
         }
         created.forEach((m) => m.setMap && m.setMap(null));
 
-        const cells = new Map();
-        for (let i = 0; i < list.length; i += 1) {
-            const place = list[i];
-            const lng = place.longitude;
-            const lat = place.latitude;
-            const pixel = getPixelPoint(map, lng, lat);
-            if (!pixel) continue;
-            const gx = Math.floor(pixel.x / gridSize);
-            const gy = Math.floor(pixel.y / gridSize);
-            const key = `${gx}_${gy}`;
-            if (!cells.has(key)) {
-                cells.set(key, []);
+        const zoom = map.getZoom();
+        const radius = getClusterRadius(zoom);
+
+        // 缩放级别超出聚类范围时，直接显示全部独立标记
+        if (radius <= 0) {
+            created.forEach((m) => m.setMap(map));
+            markersRef.current.__cluster = {
+                clusterMarkers: [],
+                handlers: markersRef.current.__cluster ? markersRef.current.__cluster.handlers : []
+            };
+            return;
+        }
+
+        const n = list.length;
+        if (n === 0) {
+            markersRef.current.__cluster = {
+                clusterMarkers: [],
+                handlers: markersRef.current.__cluster ? markersRef.current.__cluster.handlers : []
+            };
+            return;
+        }
+
+        const uf = new UnionFind(n);
+
+        // 地理网格空间索引，仅比较相邻格内的点对
+        const cellSizeDeg = radius / 111320;
+        const grid = new Map();
+
+        for (let i = 0; i < n; i++) {
+            const p = list[i];
+            const cx = Math.floor(p.longitude / cellSizeDeg);
+            const cy = Math.floor(p.latitude / cellSizeDeg);
+            const key = `${cx}_${cy}`;
+            if (!grid.has(key)) grid.set(key, []);
+            grid.get(key).push({ index: i });
+        }
+
+        for (const [key, cellItems] of grid) {
+            const [cx, cy] = key.split('_').map(Number);
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const neighborKey = `${cx + dx}_${cy + dy}`;
+                    const neighborItems = grid.get(neighborKey);
+                    if (!neighborItems) continue;
+                    for (const a of cellItems) {
+                        for (const b of neighborItems) {
+                            if (a.index >= b.index) continue;
+                            const pa = list[a.index];
+                            const pb = list[b.index];
+                            const dist = haversineDistanceMeters(
+                                { lat: pa.latitude, lng: pa.longitude },
+                                { lat: pb.latitude, lng: pb.longitude }
+                            );
+                            if (dist <= radius) {
+                                uf.union(a.index, b.index);
+                            }
+                        }
+                    }
+                }
             }
-            cells.get(key).push({ place, pixel });
+        }
+
+        // 按连通分量分组
+        const groups = new Map();
+        for (let i = 0; i < n; i++) {
+            const root = uf.find(i);
+            if (!groups.has(root)) groups.set(root, []);
+            groups.get(root).push(list[i]);
         }
 
         const clusterMarkers = [];
-        for (const places of cells.values()) {
-            if (places.length === 1) {
-                const place = places[0].place;
+        for (const groupPlaces of groups.values()) {
+            if (groupPlaces.length === 1) {
+                const place = groupPlaces[0];
                 const marker = markerByPlace.get(place) || markerByKey.get(place.id != null ? `id:${place.id}` : '');
                 if (marker) marker.setMap(map);
                 continue;
             }
 
-            let sumLng = 0;
-            let sumLat = 0;
-            let sumX = 0;
-            let sumY = 0;
-            places.forEach((entry) => {
-                const p = entry.place;
-                sumLng += p.longitude;
-                sumLat += p.latitude;
-                sumX += entry.pixel.x;
-                sumY += entry.pixel.y;
-            });
-            const fallbackCenter = { lng: sumLng / places.length, lat: sumLat / places.length };
-            const pixelCenter = { x: sumX / places.length, y: sumY / places.length };
-            const lngLatCenter = normalizeLngLatValue(getLngLatFromPixel(map, pixelCenter.x, pixelCenter.y), fallbackCenter);
-            const centerLng = lngLatCenter.lng;
-            const centerLat = lngLatCenter.lat;
+            const sumLng = groupPlaces.reduce((s, p) => s + p.longitude, 0);
+            const sumLat = groupPlaces.reduce((s, p) => s + p.latitude, 0);
+            const centerLng = sumLng / groupPlaces.length;
+            const centerLat = sumLat / groupPlaces.length;
 
             const clusterMarker = new window.AMap.Marker({
                 position: [centerLng, centerLat],
-                content: buildClusterContent(places.length),
+                content: buildClusterContent(groupPlaces.length),
                 offset: new window.AMap.Pixel(-17, -17)
             });
             clusterMarker.on('click', () => {
                 map.panTo([centerLng, centerLat]);
-                const placeList = places.map((entry) => entry.place);
-                setTimeout(() => zoomToCluster(map, placeList), 260);
+                setTimeout(() => zoomToCluster(map, groupPlaces), 260);
             });
             clusterMarker.setMap(map);
             clusterMarkers.push(clusterMarker);
@@ -244,25 +322,16 @@ export function renderMarkers(map, markersRef, list, onClick) {
         };
     };
 
-    // 初次渲染与地图交互时刷新聚类
+    // 仅在缩放变化时刷新聚类（地理距离不随平移改变，无需在 moveend 重算）
     const handlers = [];
     if (typeof map.on === 'function') {
         const onZoomEnd = () => renderClusters();
-        const onMoveEnd = () => renderClusters();
         map.on('zoomend', onZoomEnd);
-        map.on('moveend', onMoveEnd);
-        handlers.push({ type: 'zoomend', fn: onZoomEnd }, { type: 'moveend', fn: onMoveEnd });
+        handlers.push({ type: 'zoomend', fn: onZoomEnd });
     }
     markersRef.current.__cluster = { clusterMarkers: [], handlers };
 
     if (points.length === 0) {
-        return created;
-    }
-
-    // 如果无法计算像素坐标，退回平铺
-    const canProject = getPixelPoint(map, points[0].lnglat[0], points[0].lnglat[1]);
-    if (!canProject) {
-        created.forEach((marker) => marker.setMap(map));
         return created;
     }
 
