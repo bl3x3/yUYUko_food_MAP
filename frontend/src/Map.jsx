@@ -18,6 +18,33 @@ const { normalizeLngLat, readSavedMapView, shouldPersistMapView, MAP_VIEW_STORAG
 const PREFETCH_BOUNDS_RATIO = 1; // prefetch one viewport margin around the visible area
 
 const clampNumber = (value, min, max) => Math.min(Math.max(value, min), max);
+const getAgentRadiusFromMap = (map) => {
+    if (!map || typeof map.getBounds !== "function") return undefined;
+    const bounds = map.getBounds();
+    if (!bounds) return undefined;
+    const center = MapUtils.normalizeLngLat(map.getCenter());
+    if (!center) return undefined;
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const swLng = typeof sw.lng !== 'undefined' ? sw.lng : sw.getLng();
+    const swLat = typeof sw.lat !== 'undefined' ? sw.lat : sw.getLat();
+    const neLng = typeof ne.lng !== 'undefined' ? ne.lng : ne.getLng();
+    const neLat = typeof ne.lat !== 'undefined' ? ne.lat : ne.getLat();
+    if (!Number.isFinite(swLng) || !Number.isFinite(swLat) || !Number.isFinite(neLng) || !Number.isFinite(neLat)) return undefined;
+    const corners = [
+        { lng: swLng, lat: swLat },
+        { lng: swLng, lat: neLat },
+        { lng: neLng, lat: swLat },
+        { lng: neLng, lat: neLat }
+    ];
+    let maxDist = 0;
+    for (const corner of corners) {
+        const dist = MapUtils.haversineDistanceMeters(center, corner);
+        if (Number.isFinite(dist) && dist > maxDist) maxDist = dist;
+    }
+    if (!Number.isFinite(maxDist) || maxDist <= 0) return undefined;
+    return Math.round(maxDist * 2);
+};
 
 
 
@@ -100,6 +127,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const searchingRef = useRef(searching);
     useEffect(() => { searchingRef.current = searching; }, [searching]);
     const searchServerRef = useRef(null);
+    const skipNextSearchRef = useRef(false);
+    const skipSearchTimerRef = useRef(null);
     useEffect(() => { manageOpenRef.current = manageOpen; }, [manageOpen]);
     useEffect(() => { commentOpenRef.current = commentOpen; }, [commentOpen]);
     const loadPlacesRef = useRef(null);
@@ -113,6 +142,17 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             return loadPlacesRef.current(true);
         }
         return null;
+    };
+
+    const armSkipAutoSearch = (durationMs = 900) => {
+        skipNextSearchRef.current = true;
+        if (skipSearchTimerRef.current) {
+            window.clearTimeout(skipSearchTimerRef.current);
+        }
+        skipSearchTimerRef.current = window.setTimeout(() => {
+            skipNextSearchRef.current = false;
+            skipSearchTimerRef.current = null;
+        }, durationMs);
     };
 
     const DEFAULT_THEME_COLOR = '#002fa7';
@@ -450,6 +490,15 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     }
                 }, 300);
 
+                if (skipNextSearchRef.current) {
+                    skipNextSearchRef.current = false;
+                    if (skipSearchTimerRef.current) {
+                        window.clearTimeout(skipSearchTimerRef.current);
+                        skipSearchTimerRef.current = null;
+                    }
+                    return;
+                }
+
                 const term = (searchTermRef.current || "").trim();
                 if (!term || !mapRef.current || !searchServerRef.current) return;
                 if (searchTimer) {
@@ -463,7 +512,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     if (searchingRef.current) return;
                     searchServerRef.current({
                         q: term,
-                        center: { lat: centerNode.lat, lng: centerNode.lng }
+                        center: { lat: centerNode.lat, lng: centerNode.lng },
+                        autoFit: false
                     });
                 }, 350);
             };
@@ -553,6 +603,10 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             if (searchTimer) {
                 window.clearTimeout(searchTimer);
                 searchTimer = null;
+            }
+            if (skipSearchTimerRef.current) {
+                window.clearTimeout(skipSearchTimerRef.current);
+                skipSearchTimerRef.current = null;
             }
             if (mapRef.current) {
                 if (handleMapClick) mapRef.current.off("click", handleMapClick);
@@ -829,17 +883,18 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     };
 
     // 使用后端 /api/places/search 接口进行搜索，并混合高德地图 API 非标记点结果
-    const searchServer = async ({ q = "", center = undefined, limit = 200 } = {}) => {
+    const searchServer = async ({ q = "", center = undefined, limit = 200, autoFit = true } = {}) => {
         const userLocPos = userLocationMarkerRef?.current ? userLocationMarkerRef.current.getPosition() : null;
         const mapCenter = mapRef.current ? mapRef.current.getCenter() : null;
         const effectiveCenter = center || (userLocPos ? { lat: userLocPos.lat, lng: userLocPos.lng } : (mapCenter ? { lat: mapCenter.lat, lng: mapCenter.lng } : undefined));
+        const agentRadius = mapRef.current ? getAgentRadiusFromMap(mapRef.current) : undefined;
         if (!mapRef.current && !effectiveCenter) {
             console.warn("searchServer: 地图尚未就绪且未传入 center，直接返回");
             return;
         }
         setSearching(true);
         try {
-            const markedData = await Api.searchPlaces(backendUrl, { q, center: effectiveCenter, limit });
+            const markedData = await Api.searchPlaces(backendUrl, { q, center: effectiveCenter, limit, agentRadius });
 
             let unmarkedData = [];
             if (window.AMap && q && q.trim()) {
@@ -912,15 +967,25 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             setSearchResults(data);
             renderMarkers(mapRef.current, markersRef, data, showPopup);
             // 若匹配成功，调整视野到所有匹配 marker
-            const markers = markersRef.current;
-            if (markers && markers.length > 0) {
-                try {
-                    mapRef.current.setFitView(markers);
-                } catch (e) {
-                    const first = data[0];
-                    if (first) {
-                        mapRef.current.setCenter([first.longitude, first.latitude]);
-                        mapRef.current.setZoom(15);
+            if (autoFit) {
+                const markers = markersRef.current;
+                if (markers && markers.length > 0) {
+                    skipNextSearchRef.current = true;
+                    if (skipSearchTimerRef.current) {
+                        window.clearTimeout(skipSearchTimerRef.current);
+                    }
+                    skipSearchTimerRef.current = window.setTimeout(() => {
+                        skipNextSearchRef.current = false;
+                        skipSearchTimerRef.current = null;
+                    }, 800);
+                    try {
+                        mapRef.current.setFitView(markers);
+                    } catch (e) {
+                        const first = data[0];
+                        if (first) {
+                            mapRef.current.setCenter([first.longitude, first.latitude]);
+                            mapRef.current.setZoom(15);
+                        }
                     }
                 }
             }
@@ -1281,6 +1346,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 clearSearch={clearSearch}
                 searchResetKey={searchResetKey}
                 searchServer={searchServer}
+                onProgrammaticMapMove={armSkipAutoSearch}
                 onSelectSuggestion={handleSelectSuggestion}
                 mapReady={mapReady}
                 searching={searching}

@@ -23,6 +23,7 @@ export default function MapUI(props) {
         clearSearch,
         searchResetKey,
         searchServer,
+        onProgrammaticMapMove,
         onSelectSuggestion,
         mapReady,
         searching,
@@ -201,6 +202,9 @@ export default function MapUI(props) {
 
     const navigateToPlace = (longitude, latitude) => {
         if (!longitude || !latitude || !mapRef?.current) return;
+        if (typeof onProgrammaticMapMove === 'function') {
+            onProgrammaticMapMove();
+        }
         mapRef.current.setCenter([longitude, latitude]);
         mapRef.current.setZoom(FAVORITE_LOCATION_ZOOM_LEVEL);
     };
@@ -244,6 +248,9 @@ export default function MapUI(props) {
             onSelectSuggestion(item);
         }
         if (mapRef?.current && item.longitude && item.latitude) {
+            if (typeof onProgrammaticMapMove === 'function') {
+                onProgrammaticMapMove();
+            }
             mapRef.current.setCenter([item.longitude, item.latitude]);
             mapRef.current.setZoom(16);
         }

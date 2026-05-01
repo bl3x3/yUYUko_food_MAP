@@ -44,6 +44,7 @@ export async function searchPlaces(backendUrl, opts = {}) {
         params.set('centerLat', String(opts.center.lat));
         params.set('centerLng', String(opts.center.lng));
     }
+    if (opts.agentRadius) params.set('agentRadius', String(opts.agentRadius));
 
     const url = `${backendUrl}/api/places/search?${params.toString()}`;
     const res = await fetch(url);
