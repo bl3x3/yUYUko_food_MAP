@@ -115,7 +115,7 @@ async function expandQueriesWithDeepseek(query, maxSuggestions = DEFAULT_DEEPSEE
     const content = await deepseekChat([
         {
             role: 'system',
-            content: 'You are a search assistant for a food map. Return a JSON array of 3 to 6 Chinese keyword phrases. Only return the JSON array.'
+            content: 'You are a search assistant for a food map. The user is searching for a restaurant or food place. Generate 3-6 alternative Chinese search keywords that represent the SAME food type, cuisine, or dish category. Focus on semantic equivalents and common aliases - do NOT broaden to unrelated food types. Return ONLY a JSON array of strings.'
         },
         {
             role: 'user',
@@ -206,6 +206,7 @@ function buildAgentCandidates(places, center, maxCandidates, radiusMeters) {
             category: truncateText(p.category || '', 30),
             address: truncateText(p.address || '', 40),
             description: truncateText(p.description || '', 50),
+            hasDescription: !!(p.description && p.description.toString().trim()),
             distanceMeters,
             place: p
         });
@@ -231,7 +232,8 @@ async function selectAgentKeysFromCandidates(query, candidates, maxCount) {
             name: c.name,
             category: c.category,
             address: c.address,
-            description: c.description
+            description: c.description,
+            has_description: c.hasDescription
         };
         if (Number.isFinite(c.distanceMeters)) {
             base.distance_m = Math.round(c.distanceMeters);
@@ -242,7 +244,7 @@ async function selectAgentKeysFromCandidates(query, candidates, maxCount) {
     const content = await deepseekChat([
         {
             role: 'system',
-            content: 'You are a location recommender. Choose the best candidates for the user query. Return a JSON array of candidate keys only. Do not return extra text.'
+            content: 'You are a location recommender for a food map. Choose candidates that best match the user query. Prioritize candidates whose name/category/description clearly relate to the query. Candidates with "has_description": false have only a name — select them ONLY if the name is a clear and direct match for the query. Return ONLY a JSON array of candidate keys.'
         },
         {
             role: 'user',
@@ -358,7 +360,13 @@ function shouldFallbackToDeepseek(term, matched, center) {
     if (!q || q.length < DEFAULT_DEEPSEEK_MIN_QUERY_LENGTH) return false;
     if (!DEEPSEEK_API_KEY) return false;
     if (!matched.length) return true;
+
     const quality = getMatchQuality(matched, center);
+
+    // 有足够的高质量名称匹配时不过度回退
+    const strongMatches = matched.filter(m => m.score >= 1.0);
+    if (strongMatches.length >= 3) return false;
+
     if (quality.bestScore < DEFAULT_DEEPSEEK_MIN_SCORE) return true;
     if (center && Number.isFinite(quality.nearestDistance) && quality.nearestDistance > DEFAULT_DEEPSEEK_FAR_DISTANCE_METERS) {
         return true;
