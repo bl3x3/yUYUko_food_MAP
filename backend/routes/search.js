@@ -14,7 +14,7 @@ const DEFAULT_DEEPSEEK_TIMEOUT_MS = (() => {
     return Number.isFinite(n) && n > 0 ? n : 15000;
 })();
 const DEFAULT_DEEPSEEK_MIN_SCORE = 0.6;
-const DEFAULT_DEEPSEEK_MAX_SUGGESTIONS = 4;
+const DEFAULT_DEEPSEEK_MAX_SUGGESTIONS = 8;
 const DEFAULT_DEEPSEEK_MIN_QUERY_LENGTH = 2;
 const DEFAULT_DEEPSEEK_FAR_DISTANCE_METERS = Math.max(8000, DEFAULT_NEARBY_RADIUS_METERS * 2);
 const DEFAULT_AGENT_RECOMMEND_COUNT = 5;
@@ -376,10 +376,10 @@ function buildMatchesFromRows(rows, term, center) {
         const category = normalizeText(p.category || '');
         const description = normalizeText(p.description || '');
 
-        const nameContains = name.indexOf(t) !== -1;
-        const categoryContains = category.indexOf(t) !== -1;
-        const descContains = description.indexOf(t) !== -1;
-        const nameSubseq = isSubsequence(t, name);
+        const nameContains = name.indexOf(t) !== -1 || t.indexOf(name) !== -1;
+        const categoryContains = category.indexOf(t) !== -1 || t.indexOf(category) !== -1;
+        const descContains = description.indexOf(t) !== -1 || t.indexOf(description) !== -1;
+        const nameSubseq = isSubsequence(t, name) || isSubsequence(name, t);
 
         if (!nameContains && !nameSubseq && !categoryContains && !descContains) continue;
 
@@ -487,6 +487,7 @@ async function getAllPlaces(opts = {}) {
 
     let prioritized = prioritizeNearbyMatches(matched, { center, limit, nearbyRadius, nearbyMin });
     let results = prioritized.map(m => m.place);
+    let deepseekFallbackUsed = false;
 
     if (allowDeepseek && shouldFallbackToDeepseek(term, matched, center)) {
         const suggestions = await expandQueriesWithDeepseek(q);
@@ -500,8 +501,13 @@ async function getAllPlaces(opts = {}) {
             const allMerged = mergeMatchesByPlace(allMatches);
             allMerged.sort(compareMatches);
             results = allMerged.map(m => m.place);
+            deepseekFallbackUsed = true;
         }
     }
+
+    // 当 DeepSeek fallback 已被触发时，不要用 agent 推荐替代全部结果，
+    // 而是将 agent 推荐合并到已有结果中，确保返回尽可能多的匹配
+    const effectiveAgentRecommendOnly = deepseekFallbackUsed ? false : agentRecommendOnly;
 
     if (agentRecommend) {
         const recommended = await recommendPlacesWithAgent(q, results, center, {
@@ -510,7 +516,7 @@ async function getAllPlaces(opts = {}) {
             radiusMeters: agentRadiusMeters
         });
         if (recommended.length > 0) {
-            if (agentRecommendOnly) {
+            if (effectiveAgentRecommendOnly) {
                 results = recommended;
             } else {
                 const seen = new Set();

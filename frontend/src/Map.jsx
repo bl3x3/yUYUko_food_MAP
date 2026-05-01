@@ -375,7 +375,6 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         let handleMapStyleChange = null;
         let resizeObserver = null;
         let loadTimer = null;
-        let searchTimer = null;
 
         const getCurrentMapView = () => {
             if (!mapRef.current) return null;
@@ -490,32 +489,6 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     }
                 }, 300);
 
-                if (skipNextSearchRef.current) {
-                    skipNextSearchRef.current = false;
-                    if (skipSearchTimerRef.current) {
-                        window.clearTimeout(skipSearchTimerRef.current);
-                        skipSearchTimerRef.current = null;
-                    }
-                    return;
-                }
-
-                const term = (searchTermRef.current || "").trim();
-                if (!term || !mapRef.current || !searchServerRef.current) return;
-                if (searchTimer) {
-                    window.clearTimeout(searchTimer);
-                }
-                searchTimer = window.setTimeout(() => {
-                    searchTimer = null;
-                    if (!mapRef.current || !searchServerRef.current) return;
-                    const centerNode = normalizeLngLat(mapRef.current.getCenter());
-                    if (!centerNode) return;
-                    if (searchingRef.current) return;
-                    searchServerRef.current({
-                        q: term,
-                        center: { lat: centerNode.lat, lng: centerNode.lng },
-                        autoFit: false
-                    });
-                }, 350);
             };
             handlePageHide = () => {
                 persistCurrentMapView(true);
@@ -599,10 +572,6 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             if (loadTimer) {
                 window.clearTimeout(loadTimer);
                 loadTimer = null;
-            }
-            if (searchTimer) {
-                window.clearTimeout(searchTimer);
-                searchTimer = null;
             }
             if (skipSearchTimerRef.current) {
                 window.clearTimeout(skipSearchTimerRef.current);
@@ -883,7 +852,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     };
 
     // 使用后端 /api/places/search 接口进行搜索，并混合高德地图 API 非标记点结果
-    const searchServer = async ({ q = "", center = undefined, limit = 200, autoFit = true, includeUnmarked = true } = {}) => {
+    const searchServer = async ({ q = "", center = undefined, limit = undefined, autoFit = true, includeUnmarked = true } = {}) => {
         const userLocPos = userLocationMarkerRef?.current ? userLocationMarkerRef.current.getPosition() : null;
         const mapCenter = mapRef.current ? mapRef.current.getCenter() : null;
         const effectiveCenter = center || (userLocPos ? { lat: userLocPos.lat, lng: userLocPos.lng } : (mapCenter ? { lat: mapCenter.lat, lng: mapCenter.lng } : undefined));
