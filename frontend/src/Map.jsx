@@ -897,7 +897,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             const markedData = await Api.searchPlaces(backendUrl, { q, center: effectiveCenter, limit, agentRadius });
 
             let unmarkedData = [];
-            if (includeUnmarked && window.AMap && q && q.trim()) {
+            if (window.AMap && q && q.trim()) {
                 unmarkedData = await new Promise(resolve => {
                     window.AMap.plugin('AMap.PlaceSearch', () => {
                         const ps = new window.AMap.PlaceSearch({
@@ -962,7 +962,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 };
             }).filter(Boolean);
 
-            const data = [...markedData, ...processUnmarked];
+            const data = includeUnmarked ? [...markedData, ...processUnmarked] : markedData;
 
             setSearchResults(data);
             renderMarkers(mapRef.current, markersRef, data, showPopup);

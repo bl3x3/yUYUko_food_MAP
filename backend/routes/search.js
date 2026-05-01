@@ -483,6 +483,8 @@ async function getAllPlaces(opts = {}) {
     let matched = buildMatchesFromRows(rows, term, center);
     matched.sort(compareMatches);
 
+    const fullMatched = matched;
+
     let prioritized = prioritizeNearbyMatches(matched, { center, limit, nearbyRadius, nearbyMin });
     let results = prioritized.map(m => m.place);
 
@@ -494,21 +496,10 @@ async function getAllPlaces(opts = {}) {
                 const altMatched = buildMatchesFromRows(rows, suggestion, center);
                 extraMatches.push(...altMatched);
             }
-            const mergedExtra = mergeMatchesByPlace(extraMatches);
-            mergedExtra.sort(compareMatches);
-            const extraPrioritized = prioritizeNearbyMatches(mergedExtra, { center, limit, nearbyRadius, nearbyMin });
-            const extraResults = extraPrioritized.map(m => m.place);
-            const seen = new Set();
-            const combined = [];
-            for (const p of [...extraResults, ...results]) {
-                const key = p.id != null
-                    ? `id:${p.id}`
-                    : `geo:${p.name || ''}:${p.latitude || ''}:${p.longitude || ''}`;
-                if (seen.has(key)) continue;
-                seen.add(key);
-                combined.push(p);
-            }
-            results = combined;
+            const allMatches = [...fullMatched, ...extraMatches];
+            const allMerged = mergeMatchesByPlace(allMatches);
+            allMerged.sort(compareMatches);
+            results = allMerged.map(m => m.place);
         }
     }
 
