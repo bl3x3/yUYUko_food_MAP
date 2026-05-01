@@ -231,7 +231,7 @@ export default function MapUI(props) {
         }
         if (!searchTerm || !searchTerm.trim()) return;
         setSearchResultsVisible(false);
-        searchServer({ q: searchTerm });
+        searchServer({ q: searchTerm, limit: 30 });
     };
 
     const handleClearSearchInput = () => {
@@ -330,7 +330,7 @@ export default function MapUI(props) {
                                 e.preventDefault();
                                 if (searchTerm && searchTerm.trim()) {
                                     setSearchResultsVisible(false);
-                                    searchServer({ q: searchTerm });
+                                    searchServer({ q: searchTerm, limit: 30 });
                                 }
                             }
                         }}

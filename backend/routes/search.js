@@ -18,9 +18,15 @@ const DEFAULT_DEEPSEEK_MAX_SUGGESTIONS = 4;
 const DEFAULT_DEEPSEEK_MIN_QUERY_LENGTH = 2;
 const DEFAULT_DEEPSEEK_FAR_DISTANCE_METERS = Math.max(8000, DEFAULT_NEARBY_RADIUS_METERS * 2);
 const DEFAULT_AGENT_RECOMMEND_COUNT = 5;
-const DEFAULT_AGENT_MAX_CANDIDATES = 1000;
-const DEFAULT_AGENT_CHUNK_SIZE = 120;
-const DEFAULT_AGENT_MAX_TOKENS = 260;
+const DEFAULT_AGENT_MAX_CANDIDATES = (() => {
+    const n = Number(process.env.DEEPSEEK_AGENT_MAX_CANDIDATES);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 200;
+})();
+const DEFAULT_AGENT_CHUNK_SIZE = (() => {
+    const n = Number(process.env.DEEPSEEK_AGENT_CHUNK_SIZE);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_AGENT_MAX_CANDIDATES;
+})();
+const DEFAULT_AGENT_MAX_TOKENS = 200;
 const DEFAULT_AGENT_RADIUS_METERS = (() => {
     const n = Number(process.env.DEEPSEEK_AGENT_RADIUS_METERS);
     if (Number.isFinite(n) && n > 0) return n;
@@ -196,10 +202,10 @@ function buildAgentCandidates(places, center, maxCandidates, radiusMeters) {
         }
         list.push({
             key,
-            name: (p.name || '').toString().trim(),
-            category: (p.category || '').toString().trim(),
-            address: (p.address || '').toString().trim(),
-            description: truncateText(p.description || '', 80),
+            name: truncateText(p.name || '', 40),
+            category: truncateText(p.category || '', 30),
+            address: truncateText(p.address || '', 40),
+            description: truncateText(p.description || '', 50),
             distanceMeters,
             place: p
         });
@@ -260,6 +266,9 @@ async function selectAgentKeysFromCandidates(query, candidates, maxCount) {
 async function selectAgentRecommendations(query, candidates, maxCount) {
     if (!DEEPSEEK_API_KEY || !query || !candidates.length) return [];
     const limit = Number.isFinite(maxCount) && maxCount > 0 ? Math.floor(maxCount) : DEFAULT_AGENT_RECOMMEND_COUNT;
+    if (candidates.length <= DEFAULT_AGENT_CHUNK_SIZE) {
+        return await selectAgentKeysFromCandidates(query, candidates, limit);
+    }
     const chunks = splitIntoChunks(candidates, DEFAULT_AGENT_CHUNK_SIZE);
     const perChunk = Math.max(1, Math.ceil(limit / Math.max(1, chunks.length)));
     const merged = [];
