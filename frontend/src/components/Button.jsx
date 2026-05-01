@@ -50,7 +50,7 @@ function normalizeColorValue(color) {
     return typeof color === 'string' ? color.trim().toLowerCase() : '';
 }
 
-export default function Button({ children, onClick, disabled, style, title, variant = 'default', full = false, type = 'button', themeAware = false }) {
+export default function Button({ children, onClick, disabled, style, title, variant = 'default', full = false, type = 'button', themeAware = false, ...rest }) {
     const [hover, setHover] = useState(false);
     const dark = useDarkMode();
 
@@ -132,6 +132,7 @@ export default function Button({ children, onClick, disabled, style, title, vari
             style={merged}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
+            {...rest}
         >
             {children}
         </button>

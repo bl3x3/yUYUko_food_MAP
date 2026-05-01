@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import TextInput from './components/TextInput';
 import ScrollableView from './components/ScrollableView';
+import Button from './components/Button';
 
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_USERNAME_LENGTH = 64;
@@ -252,7 +253,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
             <h2 id="auth-modal-title" style={{ margin: "0 0 10px 0", fontSize: 20, color: UI_COLORS.textStrong }}>账号登录</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                 <div style={{ display: "inline-flex", gap: 4, padding: 4, borderRadius: 10, border: `1px solid ${UI_COLORS.border}`, background: UI_COLORS.tabGroupBackground }}>
-                    <button
+                    <Button
                         type="button"
                         aria-pressed={tab === "login"}
                         disabled={loading}
@@ -260,8 +261,8 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         style={getTabButtonStyle(tab === "login", loading)}
                     >
                         登录
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
                         aria-pressed={tab === "register"}
                         disabled={loading}
@@ -269,17 +270,17 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         style={getTabButtonStyle(tab === "register", loading)}
                     >
                         注册
-                    </button>
+                    </Button>
                 </div>
                 <div style={{ marginLeft: "auto" }}>
-                    <button
+                    <Button
                         type="button"
                         disabled={loading}
                         onClick={handleClose}
                         style={{ border: `1px solid ${UI_COLORS.border}`, borderRadius: 8, padding: "7px 10px", color: UI_COLORS.textMuted, background: UI_COLORS.panelBackground }}
                     >
                         关闭
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -314,11 +315,11 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             style={{ width: '100%' }}
                         />
                     </div>
-                    <button
+                    <Button
                         type="submit"
                         disabled={loading}
+                        full
                         style={{
-                            width: "100%",
                             marginTop: 14,
                             padding: "10px 12px",
                             borderRadius: 8,
@@ -331,7 +332,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         }}
                     >
                         {submitButtonText}
-                    </button>
+                    </Button>
                 </form>
             ) : (
                 <form onSubmit={handleRegister}>
@@ -387,11 +388,11 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             邀请码请向管理员或群友索取
                         </div>
                     </div>
-                    <button
+                    <Button
                         type="submit"
                         disabled={loading}
+                        full
                         style={{
-                            width: "100%",
                             marginTop: 14,
                             padding: "10px 12px",
                             borderRadius: 8,
@@ -404,7 +405,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         }}
                     >
                         {submitButtonText}
-                    </button>
+                    </Button>
                 </form>
             )}
 

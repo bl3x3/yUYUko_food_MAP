@@ -21,6 +21,7 @@ export default function MapUI(props) {
         searchTerm,
         setSearchTerm,
         clearSearch,
+        searchResetKey,
         searchServer,
         onSelectSuggestion,
         mapReady,
@@ -66,6 +67,7 @@ export default function MapUI(props) {
     } = props;
 
     const [searchOpen, setSearchOpen] = useState(false);
+    const [searchResultsVisible, setSearchResultsVisible] = useState(true);
     const [detailOpen, setDetailOpen] = useState(false);
     const [favPageOpen, setFavPageOpen] = useState(false);
     const [favItems, setFavItems] = useState([]);
@@ -75,6 +77,7 @@ export default function MapUI(props) {
     const popupRef = useRef(null);
     const [popupLayout, setPopupLayout] = useState(null);
     const dark = useDarkMode();
+    const hideNonSearchButtons = searchOpen;
 
     const { results: spResults, loading: spLoading } = useSearchPanel(searchTerm, mapRef, backendUrl, mapReady, userLocationMarkerRef, places);
 
@@ -152,6 +155,28 @@ export default function MapUI(props) {
         return () => document.removeEventListener('keydown', onKey);
     }, [searchOpen]);
 
+    useEffect(() => {
+        const map = mapRef?.current;
+        if (!searchOpen || !map || (searchTerm && searchTerm.trim())) return;
+
+        const closeIfEmpty = () => setSearchOpen(false);
+        const events = ['click', 'movestart', 'zoomstart', 'dragstart'];
+        events.forEach((eventName) => {
+            if (typeof map.on === 'function') map.on(eventName, closeIfEmpty);
+        });
+
+        return () => {
+            events.forEach((eventName) => {
+                if (typeof map.off === 'function') map.off(eventName, closeIfEmpty);
+            });
+        };
+    }, [searchOpen, searchTerm, mapRef]);
+
+    useEffect(() => {
+        if (!searchResetKey) return;
+        setSearchOpen(false);
+    }, [searchResetKey]);
+
     // Load favorites when panel opens
     useEffect(() => {
         if (!favPageOpen) return;
@@ -200,16 +225,21 @@ export default function MapUI(props) {
             setTimeout(() => inputRef.current && inputRef.current.focus(), 180);
             return;
         }
-        if (!searchTerm || !searchTerm.trim()) {
-            setSearchOpen(false);
-            return;
-        }
+        if (!searchTerm || !searchTerm.trim()) return;
+        setSearchResultsVisible(false);
         searchServer({ q: searchTerm });
+    };
+
+    const handleClearSearchInput = () => {
+        setSearchTerm('');
+        setSearchResultsVisible(false);
+        clearSearch();
+        if (inputRef.current) inputRef.current.focus();
     };
 
     const handleSelectSpItem = (item) => {
         setSearchTerm(item.name || item.address);
-        setSearchOpen(false);
+        setSearchResultsVisible(false);
         if (onSelectSuggestion) {
             onSelectSuggestion(item);
         }
@@ -273,11 +303,6 @@ export default function MapUI(props) {
             )}
 
             <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
-                {/* 灰色遮罩，弹出搜索框时显示（位于控件下面） */}
-                {searchOpen && (
-                    <div onClick={() => setSearchOpen(false)} style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.2)', zIndex: 1995 }} />
-                )}
-
                 <div style={{ position: 'relative', width: 320, height: 44, zIndex: 2001 }}>
                     <input
                         ref={inputRef}
@@ -287,13 +312,19 @@ export default function MapUI(props) {
                             const v = e.target.value;
                             setSearchTerm(v);
                             if (!v || !v.trim()) {
+                                setSearchResultsVisible(false);
                                 clearSearch();
+                            } else {
+                                setSearchResultsVisible(true);
                             }
                         }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
-                                if (searchTerm && searchTerm.trim()) searchServer({ q: searchTerm });
+                                if (searchTerm && searchTerm.trim()) {
+                                    setSearchResultsVisible(false);
+                                    searchServer({ q: searchTerm });
+                                }
                             }
                         }}
                         disabled={!mapReady || searching}
@@ -303,7 +334,7 @@ export default function MapUI(props) {
                             top: 0,
                             height: 44,
                             boxSizing: 'border-box',
-                            padding: '6px 12px',
+                            padding: '6px 34px 6px 12px',
                             borderRadius: 22,
                             border: dark ? '2px solid rgba(255,255,255,0.06)' : `2px solid ${customThemeColor}`,
                             background: dark ? '#0b1220' : '#fff',
@@ -320,7 +351,39 @@ export default function MapUI(props) {
                         }}
                     />
 
-                    {searchOpen && searchTerm && (spLoading || spResults) && (
+                    {searchOpen && (
+                        <Button
+                            onClick={handleClearSearchInput}
+                            title="清空搜索内容"
+                            disabled={!mapReady || searching}
+                            style={{
+                                position: 'absolute',
+                                right: 60,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: 20,
+                                height: 20,
+                                borderRadius: '50%',
+                                border: 'none',
+                                padding: 0,
+                                minWidth: 20,
+                                fontSize: 18,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'transparent',
+                                color: dark ? '#e5e7eb' : '#4b5563',
+                                cursor: (!mapReady || searching) ? 'not-allowed' : 'pointer',
+                                opacity: (!mapReady || searching) ? 0.55 : 1,
+                                zIndex: 2003,
+                                pointerEvents: searchOpen ? 'auto' : 'none'
+                            }}
+                        >
+                            ×
+                        </Button>
+                    )}
+
+                    {searchOpen && searchTerm && searchResultsVisible && (spLoading || spResults) && (
                         <ScrollableView style={{
                             position: 'absolute',
                             top: 48,
@@ -345,7 +408,6 @@ export default function MapUI(props) {
                                         if (mapRef?.current && spResults?.unmarkedInView?.[0]) {
                                             mapRef.current.setCenter([spResults.unmarkedInView[0].longitude, spResults.unmarkedInView[0].latitude]);
                                         }
-                                        setSearchOpen(false);
                                     })}
                                     {renderSpSection('其他匹配结果', spResults?.others, false, null)}
                                     {(!spResults?.markedInView?.length && !spResults?.unmarkedInView?.length && !spResults?.others?.length) && (
@@ -389,143 +451,114 @@ export default function MapUI(props) {
                 </div>
             </div>
 
-            <div style={{ position: "absolute", left: 16, bottom: 32, zIndex: 2000 }}>
-                {pickerMode ? (
-                    <Tooltip text="返回聚餐创建" placement="top">
-                        <div style={{ display: "inline-block" }}>
-                            <Button
-                                onClick={onPickerClose}
-                                aria-label="返回"
-                                style={{
-                                    width: 64,
-                                    height: 64,
-                                    padding: 0,
-                                    borderRadius: '50%',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: customThemeColor,
-                                    color: '#fff',
-                                    border: 'none',
-                                    boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
-                                    transition: 'background 180ms ease, transform 220ms ease',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36 }}>
-                                    arrow_back
-                                </span>
-                            </Button>
-                        </div>
-                    </Tooltip>
-                ) : (
-                    <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '发起聚餐'} placement="top">
-                        <div style={{ display: "inline-block" }}>
-                            <Button
-                                onClick={() => {
-                                    if (typeof onOpenDinners === 'function') {
-                                        onOpenDinners();
-                                        return;
-                                    }
-                                    if (typeof onOpenDinnerCreate === 'function') onOpenDinnerCreate();
-                                }}
-                                disabled={!mapReady || authPending}
-                                aria-label="发起聚餐"
-                                style={{
-                                    width: 64,
-                                    height: 64,
-                                    padding: 0,
-                                    borderRadius: '50%',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: customThemeColor,
-                                    color: '#fff',
-                                    border: 'none',
-                                    boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
-                                    transition: 'background 180ms ease, transform 220ms ease',
-                                    cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
-                                    opacity: (!mapReady || authPending) ? 0.6 : 1
-                                }}
-                            >
-                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36 }}>
-                                    flatware
-                                </span>
-                            </Button>
-                        </div>
-                    </Tooltip>
-                )}
-            </div>
-
-            <div style={{ position: "absolute", right: 8, bottom: 8, zIndex: 2000 }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
-                    <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')} placement="top">
-                        <div style={{ display: "inline-block" }}>
-                            <Button
-                                onClick={() => setFavPageOpen(v => !v)}
-                                disabled={!mapReady}
-                                aria-label={favPageOpen ? '关闭收藏夹' : '展开收藏夹'}
-                                style={{
-                                    width: 44,
-                                    height: 44,
-                                    padding: 0,
-                                    borderRadius: '50%',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: favPageOpen ? '#f5220b' : customThemeColor,
-                                    color: '#fff',
-                                    border: 'none',
-                                    transition: 'background 180ms ease, transform 220ms ease',
-                                    cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
-                                    opacity: (!mapReady || authPending) ? 0.6 : 1
-                                }}
-                            >
-                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>favorite</span>
-                            </Button>
-                        </div>
-                    </Tooltip>
-
-                    {!pickerMode && (
-                        <>
-                            <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="top">
-                                <div style={{ display: "inline-block" }}>
-                                    <Button
-                                        onClick={handleLocateMe}
-                                        disabled={!mapReady || locating}
-                                        aria-label="点击获取当前位置并添加标记点"
-                                        style={{
-                                            width: 44,
-                                            height: 44,
-                                            padding: 0,
-                                            borderRadius: '50%',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: locating ? '#089938' : customThemeColor,
-                                            color: '#fff',
-                                            border: 'none',
-                                            transition: 'background 180ms ease, transform 220ms ease',
-                                            cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
-                                            opacity: (!mapReady || authPending) ? 0.6 : 1
-                                        }}
-                                    >
-                                        {locating ? (
-                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>my_location</span>
-                                        ) : (
-                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>location_searching</span>
-                                        )}
-                                    </Button>
-                                </div>
-                            </Tooltip>
-
+            {!hideNonSearchButtons && (
+                <div style={{ position: "absolute", left: 16, bottom: 32, zIndex: 2000 }}>
+                    {pickerMode ? (
+                        <Tooltip text="返回聚餐创建" placement="top">
                             <div style={{ display: "inline-block" }}>
-                                <Tooltip text={addPlaceTipText} placement="top">
+                                <Button
+                                    onClick={onPickerClose}
+                                    aria-label="返回"
+                                    style={{
+                                        width: 64,
+                                        height: 64,
+                                        padding: 0,
+                                        borderRadius: '50%',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: customThemeColor,
+                                        color: '#fff',
+                                        border: 'none',
+                                        boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                        transition: 'background 180ms ease, transform 220ms ease',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36 }}>
+                                        arrow_back
+                                    </span>
+                                </Button>
+                            </div>
+                        </Tooltip>
+                    ) : (
+                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '发起聚餐'} placement="top">
+                            <div style={{ display: "inline-block" }}>
+                                <Button
+                                    onClick={() => {
+                                        if (typeof onOpenDinners === 'function') {
+                                            onOpenDinners();
+                                            return;
+                                        }
+                                        if (typeof onOpenDinnerCreate === 'function') onOpenDinnerCreate();
+                                    }}
+                                    disabled={!mapReady || authPending}
+                                    aria-label="发起聚餐"
+                                    style={{
+                                        width: 64,
+                                        height: 64,
+                                        padding: 0,
+                                        borderRadius: '50%',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: customThemeColor,
+                                        color: '#fff',
+                                        border: 'none',
+                                        boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                        transition: 'background 180ms ease, transform 220ms ease',
+                                        cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
+                                        opacity: (!mapReady || authPending) ? 0.6 : 1
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36 }}>
+                                        flatware
+                                    </span>
+                                </Button>
+                            </div>
+                        </Tooltip>
+                    )}
+                </div>
+            )}
+
+            {!hideNonSearchButtons && (
+                <div style={{ position: "absolute", right: 8, bottom: 8, zIndex: 2000 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')} placement="top">
+                            <div style={{ display: "inline-block" }}>
+                                <Button
+                                    onClick={() => setFavPageOpen(v => !v)}
+                                    disabled={!mapReady}
+                                    aria-label={favPageOpen ? '关闭收藏夹' : '展开收藏夹'}
+                                    style={{
+                                        width: 44,
+                                        height: 44,
+                                        padding: 0,
+                                        borderRadius: '50%',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: favPageOpen ? '#f5220b' : customThemeColor,
+                                        color: '#fff',
+                                        border: 'none',
+                                        transition: 'background 180ms ease, transform 220ms ease',
+                                        cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
+                                        opacity: (!mapReady || authPending) ? 0.6 : 1
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>favorite</span>
+                                </Button>
+                            </div>
+                        </Tooltip>
+
+                        {!pickerMode && (
+                            <>
+                                <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="top">
                                     <div style={{ display: "inline-block" }}>
                                         <Button
-                                            onClick={handleToggleAddMode}
-                                            disabled={!mapReady || authPending}
-                                            aria-label={addPlaceTipText}
+                                            onClick={handleLocateMe}
+                                            disabled={!mapReady || locating}
+                                            aria-label="点击获取当前位置并添加标记点"
                                             style={{
                                                 width: 44,
                                                 height: 44,
@@ -534,28 +567,61 @@ export default function MapUI(props) {
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: addMode ? '#e02424' : customThemeColor,
+                                                background: locating ? '#089938' : customThemeColor,
                                                 color: '#fff',
                                                 border: 'none',
-                                                boxShadow: addMode ? '0 4px 12px rgba(224,36,36,0.2)' : '0 4px 12px rgba(0,47,167,0.2)',
                                                 transition: 'background 180ms ease, transform 220ms ease',
                                                 cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
                                                 opacity: (!mapReady || authPending) ? 0.6 : 1
                                             }}
                                         >
-                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36, transform: addMode ? 'rotate(-45deg)' : 'rotate(0deg)', transition: 'transform 220ms ease' }}>add</span>
+                                            {locating ? (
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>my_location</span>
+                                            ) : (
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>location_searching</span>
+                                            )}
                                         </Button>
                                     </div>
                                 </Tooltip>
-                            </div>
-                        </>
-                    )}
 
-                    <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
-                        v1.4.1
+                                <div style={{ display: "inline-block" }}>
+                                    <Tooltip text={addPlaceTipText} placement="top">
+                                        <div style={{ display: "inline-block" }}>
+                                            <Button
+                                                onClick={handleToggleAddMode}
+                                                disabled={!mapReady || authPending}
+                                                aria-label={addPlaceTipText}
+                                                style={{
+                                                    width: 44,
+                                                    height: 44,
+                                                    padding: 0,
+                                                    borderRadius: '50%',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    background: addMode ? '#e02424' : customThemeColor,
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    boxShadow: addMode ? '0 4px 12px rgba(224,36,36,0.2)' : '0 4px 12px rgba(0,47,167,0.2)',
+                                                    transition: 'background 180ms ease, transform 220ms ease',
+                                                    cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
+                                                    opacity: (!mapReady || authPending) ? 0.6 : 1
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36, transform: addMode ? 'rotate(-45deg)' : 'rotate(0deg)', transition: 'transform 220ms ease' }}>add</span>
+                                            </Button>
+                                        </div>
+                                    </Tooltip>
+                                </div>
+                            </>
+                        )}
+
+                        <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
+                            v1.4.2
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {selectedPlace && popupPoint && (
                 <div
@@ -571,7 +637,9 @@ export default function MapUI(props) {
                     <div ref={popupRef} style={{ background: dark ? '#0b1220' : '#fff', padding: 10, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.25)", minWidth: 200, maxWidth: '85vw' }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <strong style={{ fontSize: 14, color: dark ? '#e5e7eb' : undefined }}>{selectedPlace.name}</strong>
-                            <Button onClick={closePopup} style={{ padding: "2px 8px", borderRadius: 4, border: "none", background: "transparent", cursor: "pointer", fontSize: 18, lineHeight: 1, color: dark ? '#e5e7eb' : undefined }} title="关闭">×</Button>
+                            {!hideNonSearchButtons && (
+                                <Button onClick={closePopup} style={{ padding: "2px 8px", borderRadius: 4, border: "none", background: "transparent", cursor: "pointer", fontSize: 18, lineHeight: 1, color: dark ? '#e5e7eb' : undefined }} title="关闭">×</Button>
+                            )}
                         </div>
                         <div style={{ marginTop: 6, fontSize: 13, color: dark ? '#e5e7eb' : undefined }}>{selectedPlace.description || ""}</div>
                         <div style={{ marginTop: 6, color: dark ? '#9ca3af' : '#666', fontSize: 12 }}>分类: {selectedPlace.category || "-"}</div>
@@ -584,45 +652,49 @@ export default function MapUI(props) {
 
                         {pickerMode ? (
                             <div style={{ marginTop: 10, textAlign: 'right' }}>
-                                <Button onClick={handlePickPlace} style={{ color: '#fff', border: 0 }}>选择此地点</Button>
+                                {!hideNonSearchButtons && (
+                                    <Button onClick={handlePickPlace} style={{ color: '#fff', border: 0 }}>选择此地点</Button>
+                                )}
                             </div>
                         ) : (
-                            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
-                                {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
-                                { /*<Tooltip text="在这里留下你的评论">
+                            !hideNonSearchButtons && (
+                                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+                                    {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
+                                    { /*<Tooltip text="在这里留下你的评论">
                                     <Button onClick={openCommentPanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>评论</Button>
                                 </Tooltip>
                                 <span style={{ padding: 4 }}></span> */ }
-                                {selectedPlace.isMarked !== false && (
-                                    <Tooltip text={favoriteIds && favoriteIds.has(selectedPlace.id) ? '取消收藏' : (isAuthenticated ? '收藏此地点' : '登录后可收藏')}>
-                                        <Button
-                                            onClick={() => onToggleFavorite && onToggleFavorite(selectedPlace)}
-                                            disabled={favoriteLoading}
-                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : undefined), padding: '6px 10px', borderRadius: 4, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
-                                                {favoriteIds && favoriteIds.has(selectedPlace.id) ? 'heart_minus' : 'heart_plus'}
-                                            </span>
-                                        </Button>
-                                    </Tooltip>
-                                )}
-                                <Tooltip text={selectedPlace.isMarked === false ? '创建此地点' : '管理此地点'}>
-                                    {selectedPlace.isMarked === false ? (
-                                        <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>创建</Button>
-                                    ) : (
-                                        <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>管理</Button>
+                                    {selectedPlace.isMarked !== false && (
+                                        <Tooltip text={favoriteIds && favoriteIds.has(selectedPlace.id) ? '取消收藏' : (isAuthenticated ? '收藏此地点' : '登录后可收藏')}>
+                                            <Button
+                                                onClick={() => onToggleFavorite && onToggleFavorite(selectedPlace)}
+                                                disabled={favoriteLoading}
+                                                style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : undefined), padding: '6px 10px', borderRadius: 4, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
+                                                    {favoriteIds && favoriteIds.has(selectedPlace.id) ? 'heart_minus' : 'heart_plus'}
+                                                </span>
+                                            </Button>
+                                        </Tooltip>
                                     )}
-                                </Tooltip>
-                                <Tooltip text="查看详情与图片">
-                                    <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>详情</Button>
-                                </Tooltip>
-                            </div>
+                                    <Tooltip text={selectedPlace.isMarked === false ? '创建此地点' : '管理此地点'}>
+                                        {selectedPlace.isMarked === false ? (
+                                            <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>创建</Button>
+                                        ) : (
+                                            <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>管理</Button>
+                                        )}
+                                    </Tooltip>
+                                    <Tooltip text="查看详情与图片">
+                                        <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>详情</Button>
+                                    </Tooltip>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
             )}
 
-            {!pickerMode && manageOpen && selectedPlace && (
+            {!hideNonSearchButtons && !pickerMode && manageOpen && selectedPlace && (
                 <ManagePanel
                     backendUrl={backendUrl}
                     token={token}
@@ -639,7 +711,7 @@ export default function MapUI(props) {
                 />
             )}
 
-            {!pickerMode && addingPos && (
+            {!hideNonSearchButtons && !pickerMode && addingPos && (
                 <div style={{
                     position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
                     background: dark ? '#0b1220' : '#fff', padding: 12, zIndex: 3000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.3)"
@@ -649,11 +721,11 @@ export default function MapUI(props) {
                 </div>
             )}
 
-            {!pickerMode && detailOpen && selectedPlace && (
+            {!hideNonSearchButtons && !pickerMode && detailOpen && selectedPlace && (
                 <PlaceDetailPanel place={selectedPlace} onClose={() => setDetailOpen(false)} />
             )}
 
-            {favPageOpen && (
+            {!hideNonSearchButtons && favPageOpen && (
                 <div style={{
                     position: 'absolute', right: 60, bottom: 8,
                     width: 300, maxHeight: '60vh',

@@ -55,6 +55,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState(null);
     const [searching, setSearching] = useState(false);
+    const [searchResetKey, setSearchResetKey] = useState(0);
     const showTip = useTips();
     const confirm = useConfirm();
     const [locating, setLocating] = useState(false);
@@ -73,6 +74,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const selectedPlaceRef = useRef(null);
     const manageOpenRef = useRef(false);
     const commentOpenRef = useRef(false);
+    const prevPickerModeRef = useRef(pickerMode);
     const lastFetchedTokenRef = useRef(null);
     const hasToken = !!token;
     const authPending = hasToken && !isAuthenticated;
@@ -93,6 +95,17 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     useEffect(() => { manageOpenRef.current = manageOpen; }, [manageOpen]);
     useEffect(() => { commentOpenRef.current = commentOpen; }, [commentOpen]);
     const loadPlacesRef = useRef(null);
+
+    const clearSearchState = ({ resetTerm = true, closeSearchUi = true, reloadPlaces = true } = {}) => {
+        if (resetTerm) setSearchTerm("");
+        setSearchResults(null);
+        setSearching(false);
+        if (closeSearchUi) setSearchResetKey((v) => v + 1);
+        if (reloadPlaces && loadPlacesRef.current) {
+            return loadPlacesRef.current(true);
+        }
+        return null;
+    };
 
     const DEFAULT_THEME_COLOR = '#002fa7';
     const [customThemeColor, setCustomThemeColor] = useState(DEFAULT_THEME_COLOR);
@@ -239,6 +252,13 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         if (addMode) setAddMode(false);
         if (addingPos) setAddingPos(null);
     }, [canWrite, addMode, addingPos]);
+
+    useEffect(() => {
+        if (pickerMode && !prevPickerModeRef.current) {
+            clearSearchState();
+        }
+        prevPickerModeRef.current = pickerMode;
+    }, [pickerMode]);
 
     // Load favorites when user authenticates; clear when logged out
     useEffect(() => {
@@ -861,10 +881,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     };
 
     const clearSearch = async () => {
-        setSearchTerm("");
-        setSearchResults(null);
-        setSearching(false);
-        await loadPlaces(true); // force load since state hasn't updated ref yet
+        await clearSearchState({ resetTerm: true, closeSearchUi: false });
     };
 
     const handleSelectSuggestion = (item) => {
@@ -881,11 +898,16 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             onRequireAuth && onRequireAuth();
             return;
         }
-        setAddMode((v) => !v);
+        setAddMode((v) => {
+            const next = !v;
+            if (next) clearSearchState();
+            return next;
+        });
     };
 
     const handleCreateAtCenter = () => {
         if (!mapRef.current) return;
+        clearSearchState();
         const center = mapRef.current.getCenter();
         const lng = center.lng || (center.lnglat && center.lnglat.lng) || center.getLng && center.getLng();
         const lat = center.lat || (center.lnglat && center.lnglat.lat) || center.getLat && center.getLat();
@@ -989,6 +1011,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             showTip('您的账号已被封禁，无法提交地点。');
             return;
         }
+        clearSearchState();
         closePopup();
         setAddingPos([selectedPlace.longitude, selectedPlace.latitude]);
         setAddingPrefill({
@@ -1009,6 +1032,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             showTip('您的账号已被封禁，无法进行管理操作');
             return;
         }
+        clearSearchState();
         if (!currentUser && !fetchingUser) {
             try {
                 setFetchingUser(true);
@@ -1123,6 +1147,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             onRequireAuth && onRequireAuth();
             return;
         }
+        clearSearchState();
         // 当用户被封禁时显示提示（仍允许查看评论，但不能发布）
         if (isBanned) {
             showTip('您的账号已被封禁，无法发表评论');
@@ -1197,6 +1222,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 clearSearch={clearSearch}
+                searchResetKey={searchResetKey}
                 searchServer={searchServer}
                 onSelectSuggestion={handleSelectSuggestion}
                 mapReady={mapReady}
