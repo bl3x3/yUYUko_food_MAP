@@ -883,7 +883,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     };
 
     // 使用后端 /api/places/search 接口进行搜索，并混合高德地图 API 非标记点结果
-    const searchServer = async ({ q = "", center = undefined, limit = 200, autoFit = true } = {}) => {
+    const searchServer = async ({ q = "", center = undefined, limit = 200, autoFit = true, includeUnmarked = true } = {}) => {
         const userLocPos = userLocationMarkerRef?.current ? userLocationMarkerRef.current.getPosition() : null;
         const mapCenter = mapRef.current ? mapRef.current.getCenter() : null;
         const effectiveCenter = center || (userLocPos ? { lat: userLocPos.lat, lng: userLocPos.lng } : (mapCenter ? { lat: mapCenter.lat, lng: mapCenter.lng } : undefined));
@@ -897,7 +897,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             const markedData = await Api.searchPlaces(backendUrl, { q, center: effectiveCenter, limit, agentRadius });
 
             let unmarkedData = [];
-            if (window.AMap && q && q.trim()) {
+            if (includeUnmarked && window.AMap && q && q.trim()) {
                 unmarkedData = await new Promise(resolve => {
                     window.AMap.plugin('AMap.PlaceSearch', () => {
                         const ps = new window.AMap.PlaceSearch({
