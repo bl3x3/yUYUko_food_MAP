@@ -254,7 +254,7 @@ async function selectAgentKeysFromCandidates(query, candidates, maxCount) {
             role: 'user',
             content: `Query: ${query}\nCandidates: ${JSON.stringify(payloadCandidates)}`
         }
-    ], { temperature: 0, maxTokens: 200 });
+    ], { temperature: 0, maxTokens: 400 });
 
     const rawKeys = parseJsonArray(content);
     const allowed = new Set(candidates.map((c) => c.key));
