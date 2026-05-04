@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 # ================= 配置区 =================
-DB_NAME = "qq_whitelist.db"
+DB_NAME = "backend/data.sqlite"
 TARGET_URL = "https://qun.qq.com/member.html#gid=871393095"
 COOKIE_FILE = "qq_cookies.pkl" # 用于保存登录状态的文件
 # ==========================================
