@@ -54,7 +54,7 @@ def fetch_html_with_selenium():
     print(f"[{datetime.now().strftime('%H:%M:%S')}] 正在启动 Edge 浏览器...")
     
     options = webdriver.EdgeOptions()
-    
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Edge(options=options)
     
     try:
