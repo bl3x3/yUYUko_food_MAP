@@ -91,7 +91,7 @@ def fetch_html_with_selenium():
             try:
                 # 死等群标题出现 (最多 300 秒)
                 WebDriverWait(driver, 300).until(
-                    lambda d: len(d.find_elements(By.ID, "groupTit")) > 0
+                    lambda d: len(d.find_elements(By.CSS_SELECTOR, "a.logout[cmd='loginoff']")) > 0
                 )
                 print("[+] 登录成功！正在保存登录状态，下次将跳过此步骤...")
                 with open(COOKIE_FILE, "wb") as f:
