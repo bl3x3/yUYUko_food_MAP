@@ -4,6 +4,12 @@ import yesIcon from '../img/yes.png';
 import noIcon from '../img/no.png';
 import unionIcon from '../img/union.png';
 
+// yes.png/no.png: 500×(~594) → displayed 36×~43, bottom-center offset = (-18, -43)
+// AMap.Marker offset 接受 [x, y] 数组格式
+const INDIVIDUAL_OFFSET = [-18, -43];
+// union.png: 700×1020 → displayed 36×~52, bottom-center offset = (-18, -52)
+const CLUSTER_OFFSET = [-18, -52];
+
 export function createMarker(map, place) {
     if (!map || !window.AMap) return null;
     const category = place.category || '';
@@ -12,7 +18,8 @@ export function createMarker(map, place) {
         title: place.name,
         extData: place,
         content: buildMarkerContent(place.name, category),
-        anchor: 'bottom-center'
+        offset: INDIVIDUAL_OFFSET,
+        zIndex: 100
     });
     return marker;
 }
@@ -32,17 +39,17 @@ function buildMarkerContent(placeName, category) {
     const iconSrc = isThunder ? noIcon : yesIcon;
     const labelBg = isDarkMode() ? 'rgba(230,230,230,0.8)' : 'rgba(200,200,200,0.9)';
     return `
-        <div style="display:flex;flex-direction:column;align-items:center;">
-            <img src="${iconSrc}" style="display:block;width:36px;height:auto;" draggable="false" />
-            ${safeName ? `<div style="background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
+        <div style="position:relative;width:36px;height:43px;overflow:visible;">
+            <img src="${iconSrc}" style="display:block;width:36px;height:43px;" draggable="false" />
+            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
         </div>
     `;
 }
 
 function buildClusterContent(count) {
     return `
-        <div style="position:relative;display:inline-block;">
-            <img src="${unionIcon}" style="display:block;width:36px;height:auto;" draggable="false" />
+        <div style="position:relative;width:36px;height:52px;overflow:visible;">
+            <img src="${unionIcon}" style="display:block;width:36px;height:52px;" draggable="false" />
             <div style="position:absolute;left:50%;top:30%;transform:translate(-50%, -50%);font-weight:800;font-size:20px;color:#111827;text-shadow:0 0 3px #ffffff,0 0 3px #ffffff,0 0 3px #ffffff;pointer-events:none;line-height:1;">${count}</div>
         </div>
     `;
@@ -306,7 +313,8 @@ export function renderMarkers(map, markersRef, list, onClick) {
             const clusterMarker = new window.AMap.Marker({
                 position: [centerLng, centerLat],
                 content: buildClusterContent(groupPlaces.length),
-                anchor: 'bottom-center'
+                offset: CLUSTER_OFFSET,
+                zIndex: 200
             });
             clusterMarker.on('click', () => {
                 map.panTo([centerLng, centerLat]);
