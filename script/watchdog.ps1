@@ -1,13 +1,12 @@
 <#
 .SYNOPSIS
-    东方饭联地图 — 后端 & Memurai 自动守护脚本
+    yUYUko Food MAP - Backend & Memurai auto-restart watchdog.
 .DESCRIPTION
-    循环检测 Memurai (Redis) 服务状态和 Node.js 后端进程，
-    发现异常时自动重启，并记录日志。
+    Continuously monitors Memurai (Redis) service and Node.js backend.
+    Automatically restarts them on failure. Logs all actions to file.
 .NOTES
-    以管理员身份运行此脚本，否则无法管理 Windows 服务。
-    用法: powershell -NoProfile -ExecutionPolicy Bypass -File ".\script\watchdog.ps1"
-          或直接双击 watchdog.bat
+    Run as Administrator to manage Windows services.
+    Usage: powershell -NoProfile -ExecutionPolicy Bypass -File ".\script\watchdog.ps1"
 #>
 
 param(
@@ -19,7 +18,7 @@ param(
     [string[]]$MemuraiFallbackNames = @("Redis", "memurai", "redis")
 )
 
-# ====================== 路径初始化 ======================
+# ====================== Paths ======================
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptRoot
 
@@ -36,7 +35,7 @@ if (-not (Test-Path $LogDir)) {
 
 $LogFile = Join-Path $LogDir "watchdog_$(Get-Date -Format 'yyyy-MM-dd').log"
 
-# ====================== 工具函数 ======================
+# ====================== Helpers ======================
 function Write-Log {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -53,15 +52,13 @@ function Test-Admin {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# ====================== Memurai 服务管理 ======================
+# ====================== Memurai Management ======================
 function Get-MemuraiServiceName {
-    # 按顺序尝试找到实际存在的 Redis 服务名
     $namesToTry = @($MemuraiServiceName) + $MemuraiFallbackNames
     foreach ($name in $namesToTry) {
         $svc = Get-Service -Name $name -ErrorAction SilentlyContinue
         if ($svc) { return $name }
     }
-    # 尝试模糊匹配
     $all = Get-Service -ErrorAction SilentlyContinue | Where-Object {
         $_.DisplayName -match 'redis|memurai'
     }
@@ -73,26 +70,28 @@ function Test-MemuraiRunning {
     param([string]$ServiceName)
     if (-not $ServiceName) { return $false }
 
-    # 先检查 Windows 服务状态
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if ($svc -and $svc.Status -ne 'Running') { return $false }
     if (-not $svc) { return $false }
 
-    # 再通过 redis-cli ping 做二次确认
-    $cli = Get-Command redis-cli -ErrorAction SilentlyContinue
+    # Double-check with redis-cli ping
+    $cli = $null
+    $found = Get-Command redis-cli -ErrorAction SilentlyContinue
+    if ($found) { $cli = $found.Source }
+
     if (-not $cli) {
-        # 尝试 Memurai 安装目录
         $memePath = "${env:ProgramFiles}\Memurai\redis-cli.exe"
         $memePathX86 = "${env:ProgramFiles(x86)}\Memurai\redis-cli.exe"
         if (Test-Path $memePath) { $cli = $memePath }
         elseif (Test-Path $memePathX86) { $cli = $memePathX86 }
     }
     if ($cli) {
-        $result = & $cli ping 2>$null
-        if ($result -eq "PONG") { return $true }
+        try {
+            $result = & $cli ping 2>$null
+            if ($result -eq "PONG") { return $true }
+        } catch { }
         return $false
     }
-    # 没有 redis-cli，仅凭服务状态判断
     return ($svc.Status -eq 'Running')
 }
 
@@ -100,47 +99,43 @@ function Start-MemuraiService {
     param([string]$ServiceName)
 
     if (-not $ServiceName) {
-        Write-Log "未找到 Memurai/Redis 服务，请确认已安装 Memurai" "ERROR"
+        Write-Log "Memurai/Redis service not found. Is Memurai installed?" "ERROR"
         return $false
     }
 
-    Write-Log "正在启动 ${ServiceName} 服务..." "WARN"
+    Write-Log "Starting service: $ServiceName ..." "WARN"
     try {
         Start-Service -Name $ServiceName -ErrorAction Stop
         Start-Sleep -Seconds 3
         $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
         if ($svc -and $svc.Status -eq 'Running') {
-            Write-Log "${ServiceName} 服务启动成功" "INFO"
+            Write-Log "Service $ServiceName started successfully" "INFO"
             return $true
         } else {
-            Write-Log "${ServiceName} 服务启动后状态异常: $($svc.Status)" "ERROR"
+            $status = if ($svc) { $svc.Status } else { "UNKNOWN" }
+            Write-Log "Service $ServiceName status abnormal: $status" "ERROR"
             return $false
         }
     } catch {
-        Write-Log "启动 ${ServiceName} 失败: $($_.Exception.Message)" "ERROR"
+        Write-Log "Failed to start $ServiceName : $($_.Exception.Message)" "ERROR"
         return $false
     }
 }
 
-# ====================== 后端进程管理 ======================
-$global:BackendProcess = $null
+# ====================== Backend Process Management ======================
+$script:BackendProcess = $null
+$script:LogFileForEvents = $LogFile
 
 function Test-BackendRunning {
     param([int]$Port)
-    # 方法1: TCP 端口检测
-    $listener = $null
     try {
-        $listener = [Net.Sockets.TcpClient]::new("127.0.0.1", $Port)
-        if ($listener.Connected) { return $true }
+        $client = [Net.Sockets.TcpClient]::new("127.0.0.1", $Port)
+        if ($client.Connected) {
+            $client.Dispose()
+            return $true
+        }
+        $client.Dispose()
     } catch { }
-    finally {
-        if ($listener) { $listener.Dispose() }
-    }
-
-    # 方法2: 如果进程对象还在，检查是否响应
-    if ($global:BackendProcess -and -not $global:BackendProcess.HasExited) {
-        return $false  # 进程存在但端口不监听 = 正在启动中
-    }
     return $false
 }
 
@@ -148,20 +143,21 @@ function Start-BackendProcess {
     param([string]$WorkDir)
 
     if (-not (Test-Path $WorkDir)) {
-        Write-Log "后端目录不存在: $WorkDir" "ERROR"
+        Write-Log "Backend directory not found: $WorkDir" "ERROR"
         return $false
     }
 
-    # 如果旧进程还在，先杀掉
-    if ($global:BackendProcess -and -not $global:BackendProcess.HasExited) {
-        Write-Log "正在终止旧后端进程 (PID: $($global:BackendProcess.Id))..." "WARN"
+    # Kill old backend process
+    if ($script:BackendProcess -and -not $script:BackendProcess.HasExited) {
+        Write-Log "Killing old backend process (PID: $($script:BackendProcess.Id))..." "WARN"
         try {
-            $global:BackendProcess.Kill()
-            $global:BackendProcess.WaitForExit(5000)
+            $script:BackendProcess.Kill()
+            $script:BackendProcess.WaitForExit(5000)
+            $script:BackendProcess = $null
         } catch { }
     }
 
-    # 额外: 杀掉占用目标端口的残留 node 进程
+    # Kill any node process occupying the backend port
     $pidsOnPort = Get-NetTCPConnection -LocalPort $BackendPort -ErrorAction SilentlyContinue `
         | Where-Object { $_.State -eq 'Listen' } `
         | Select-Object -ExpandProperty OwningProcess -Unique
@@ -169,13 +165,13 @@ function Start-BackendProcess {
         try {
             $proc = Get-Process -Id $pidTarget -ErrorAction SilentlyContinue
             if ($proc -and $proc.ProcessName -match 'node') {
-                Write-Log "杀死占用端口 ${BackendPort} 的残留进程 (PID: $pidTarget)" "WARN"
+                Write-Log "Killing stale node process on port $BackendPort (PID: $pidTarget)" "WARN"
                 $proc.Kill()
             }
         } catch { }
     }
 
-    Write-Log "正在启动后端 (node index.js)..." "WARN"
+    Write-Log "Starting backend (node index.js)..." "WARN"
     try {
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = "node"
@@ -185,159 +181,150 @@ function Start-BackendProcess {
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
         $psi.CreateNoWindow = $true
-        $psi.StandardOutputEncoding = [Text.Encoding]::UTF8
-        $psi.StandardErrorEncoding = [Text.Encoding]::UTF8
 
         $proc = New-Object System.Diagnostics.Process
         $proc.StartInfo = $psi
         $proc.EnableRaisingEvents = $true
 
-        # 将 stdout/stderr 输出到日志
-        $procId = $null
-        $proc.Add_Exited({
-            param($s, $e)
-            $id = if ($s.Id) { $s.Id } else { $procId }
-            Write-Log "后端进程 (PID: $id) 已退出，退出码: $($s.ExitCode)" "ERROR"
-        })
+        $logPath = $script:LogFileForEvents
 
-        Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action {
+        # Event handlers for stdout/stderr redirection
+        $outEvent = Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action {
             $line = $EventArgs.Data
             if ($line) {
                 $msg = "[node-out] $line"
                 Write-Host $msg
-                try { Add-Content -Path $LogFile -Value $msg -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
+                try { Add-Content -Path $logPath -Value $msg -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
             }
-        } | Out-Null
+        }
 
-        Register-ObjectEvent -InputObject $proc -EventName ErrorDataReceived -Action {
+        $errEvent = Register-ObjectEvent -InputObject $proc -EventName ErrorDataReceived -Action {
             $line = $EventArgs.Data
             if ($line) {
                 $msg = "[node-err] $line"
                 Write-Host $msg -ForegroundColor Red
-                try { Add-Content -Path $LogFile -Value $msg -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
+                try { Add-Content -Path $logPath -Value $msg -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
             }
-        } | Out-Null
+        }
 
         $proc.Start() | Out-Null
-        $procId = $proc.Id
         $proc.BeginOutputReadLine()
         $proc.BeginErrorReadLine()
 
-        $global:BackendProcess = $proc
-        Write-Log "后端进程已启动 (PID: $procId)" "INFO"
+        $script:BackendProcess = $proc
+        Write-Log "Backend process started (PID: $($proc.Id))" "INFO"
         return $true
     } catch {
-        Write-Log "启动后端失败: $($_.Exception.Message)" "ERROR"
+        Write-Log "Failed to start backend: $($_.Exception.Message)" "ERROR"
         return $false
     }
 }
 
-# ====================== 主循环 ======================
+# ====================== Main Loop ======================
 function Main-Loop {
     $serviceName = Get-MemuraiServiceName
     if ($serviceName) {
-        Write-Log "检测到 Redis 服务: $serviceName" "INFO"
+        Write-Log "Detected Redis service: $serviceName" "INFO"
     } else {
-        Write-Log "未检测到 Memurai/Redis 服务，将跳过 Redis 守护" "WARN"
+        Write-Log "No Memurai/Redis service detected, will skip Redis monitoring" "WARN"
     }
 
-    # 启动时先确保一切就绪
-    $memuraiOk = $true
+    # Startup: ensure everything is ready
     if ($serviceName) {
         if (-not (Test-MemuraiRunning -ServiceName $serviceName)) {
-            Write-Log "Memurai 未运行，正在启动..." "WARN"
-            $memuraiOk = Start-MemuraiService -ServiceName $serviceName
+            Write-Log "Memurai not running, starting..." "WARN"
+            Start-MemuraiService -ServiceName $serviceName | Out-Null
         } else {
-            Write-Log "Memurai 已在运行" "INFO"
+            Write-Log "Memurai is running" "INFO"
         }
     }
 
     if (-not (Test-BackendRunning -Port $BackendPort)) {
-        Write-Log "后端未运行，正在启动..." "WARN"
-        Start-BackendProcess -WorkDir $BackendDir
+        Write-Log "Backend not running, starting..." "WARN"
+        Start-BackendProcess -WorkDir $BackendDir | Out-Null
     } else {
-        Write-Log "后端已在运行 (端口 $BackendPort)" "INFO"
+        Write-Log "Backend is running (port $BackendPort)" "INFO"
     }
 
     $memuraiFailCount = 0
     $backendFailCount = 0
-    $maxConsecutiveFails = 5
 
     while ($true) {
         Start-Sleep -Seconds $CheckIntervalSeconds
 
-        # ---- 检测 Memurai ----
+        # ---- Check Memurai ----
         if ($serviceName) {
             if (Test-MemuraiRunning -ServiceName $serviceName) {
                 $memuraiFailCount = 0
             } else {
                 $memuraiFailCount++
-                Write-Log "Memurai 无响应 (连续 $memuraiFailCount 次)" "WARN"
+                Write-Log "Memurai unresponsive (consecutive: $memuraiFailCount)" "WARN"
                 if ($memuraiFailCount -ge 2) {
-                    Start-MemuraiService -ServiceName $serviceName
+                    Start-MemuraiService -ServiceName $serviceName | Out-Null
                     $memuraiFailCount = 0
                 }
             }
         }
 
-        # ---- 检测后端 ----
+        # ---- Check Backend ----
         if (Test-BackendRunning -Port $BackendPort) {
             $backendFailCount = 0
         } else {
             $backendFailCount++
-            if ($global:BackendProcess -and -not $global:BackendProcess.HasExited) {
-                Write-Log "后端进程存在但端口 $BackendPort 无响应 (连续 $backendFailCount 次)" "WARN"
+            if ($script:BackendProcess -and -not $script:BackendProcess.HasExited) {
+                Write-Log "Backend process exists but port $BackendPort not responding (consecutive: $backendFailCount)" "WARN"
             } else {
-                Write-Log "后端进程已退出 (连续 $backendFailCount 次)" "WARN"
+                Write-Log "Backend process exited (consecutive: $backendFailCount)" "WARN"
             }
 
             if ($backendFailCount -ge 2) {
-                Write-Log "后端异常，尝试重启..." "ERROR"
+                Write-Log "Backend abnormal, attempting restart..." "ERROR"
 
-                # 若 Memurai 也不可用，先修复 Memurai
+                # If Memurai is also down, fix it first
                 if ($serviceName -and -not (Test-MemuraiRunning -ServiceName $serviceName)) {
-                    Write-Log "Memurai 也不可用，先重启 Memurai..." "ERROR"
-                    Start-MemuraiService -ServiceName $serviceName
+                    Write-Log "Memurai also down, restarting Memurai first..." "ERROR"
+                    Start-MemuraiService -ServiceName $serviceName | Out-Null
                     Start-Sleep -Seconds 3
                 }
 
-                Start-BackendProcess -WorkDir $BackendDir
+                Start-BackendProcess -WorkDir $BackendDir | Out-Null
                 $backendFailCount = 0
 
-                # 启动后等待一会再验证
+                # Wait a moment then verify
                 Start-Sleep -Seconds 5
                 if (Test-BackendRunning -Port $BackendPort) {
-                    Write-Log "后端恢复正常" "INFO"
+                    Write-Log "Backend recovered successfully" "INFO"
                 } else {
-                    Write-Log "后端启动后仍无响应，将在下一轮重新尝试" "ERROR"
+                    Write-Log "Backend still not responding after restart, will retry next round" "ERROR"
                 }
             }
         }
     }
 }
 
-# ====================== 入口 ======================
+# ====================== Entry Point ======================
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  东方饭联地图 - 后端守护脚本" -ForegroundColor Cyan
+Write-Host "  yUYUko Food MAP - Watchdog Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  检测间隔: ${CheckIntervalSeconds}s" -ForegroundColor Gray
-Write-Host "  后端端口: $BackendPort" -ForegroundColor Gray
-Write-Host "  后端目录: $BackendDir" -ForegroundColor Gray
-Write-Host "  日志目录: $LogDir" -ForegroundColor Gray
+Write-Host "  Check Interval: ${CheckIntervalSeconds}s" -ForegroundColor Gray
+Write-Host "  Backend Port  : $BackendPort" -ForegroundColor Gray
+Write-Host "  Backend Dir   : $BackendDir" -ForegroundColor Gray
+Write-Host "  Log Dir       : $LogDir" -ForegroundColor Gray
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Admin)) {
-    Write-Log "警告: 未以管理员身份运行。如果 Memurai 服务需要启停，请以管理员身份重新运行。" "WARN"
+    Write-Log "WARNING: Not running as Administrator. Memurai service management may fail." "WARN"
     Write-Host ""
 }
 
 try {
     Main-Loop
 } catch {
-    Write-Log "守护脚本异常退出: $($_.Exception.Message)" "FATAL"
-    Write-Log "堆栈: $($_.ScriptStackTrace)" "FATAL"
+    Write-Log "Watchdog script crashed: $($_.Exception.Message)" "FATAL"
+    Write-Log "Stack trace: $($_.ScriptStackTrace)" "FATAL"
+    throw
 } finally {
-    Write-Log "守护脚本已停止" "INFO"
+    Write-Log "Watchdog script stopped" "INFO"
 }
