@@ -50,15 +50,36 @@ def fetch_html_with_selenium():
     """
     使用 Edge 浏览器获取动态页面，并处理自动登录
     """
-    
+
     print(f"[{datetime.now().strftime('%H:%M:%S')}] 正在启动 Edge 浏览器...")
-    
+
     options = webdriver.EdgeOptions()
-    options.add_argument('--headless=new')
+
+    # 如果已有有效 Cookie，使用 headless 模式（无需显示浏览器）
+    # 否则显示浏览器窗口，让用户可以扫码登录
+    use_headless = os.path.exists(COOKIE_FILE)
+    if use_headless:
+        print("[-] 检测到已有 Cookie 文件，使用无头模式运行...")
+        options.add_argument('--headless=new')
+    else:
+        print("[!] 未检测到 Cookie，将显示浏览器窗口以便扫码登录...")
+
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0')
     options.add_argument('--window-size=1920,1080')
-    driver = webdriver.Edge(options=options)
+    # 禁用 GPU 加速，避免部分环境下的启动卡顿
+    options.add_argument('--disable-gpu')
+    # 禁用 sandbox，部分 Windows 环境下可加速启动
+    options.add_argument('--no-sandbox')
+
+    try:
+        driver = webdriver.Edge(options=options)
+        print("[+] Edge 浏览器启动成功。")
+    except Exception as e:
+        print(f"[!] Edge 浏览器启动失败: {e}")
+        print("[!] 请检查: 1) Edge 浏览器是否已安装 2) msedgedriver.exe 是否在 PATH 中")
+        print("[!] 下载 Edge WebDriver: https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/")
+        return None
     
     try:
         # 1. 访问 QQ 基础域名写入 Cookie
