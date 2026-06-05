@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import TextInput from './components/TextInput';
 import ScrollableView from './components/ScrollableView';
 import Button from './components/Button';
+import qrcodeImg from './img/qrcode.png';
 
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_USERNAME_LENGTH = 64;
@@ -75,8 +76,11 @@ async function fetchWithTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
 
 export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
     const [tab, setTab] = useState("login"); // "login" | "register"
+    const [registerStep, setRegisterStep] = useState("qrcode"); // "qrcode" | "form"
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [qq, setQq] = useState("");
     const [inviteCode, setInviteCode] = useState("");
     const [message, setMessage] = useState("");
@@ -85,10 +89,13 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
     const resetForm = useCallback(() => {
         setUsername("");
         setPassword("");
+        setConfirmPassword("");
+        setShowPassword(false);
         setQq("");
         setInviteCode("");
         setMessage("");
         setLoading(false);
+        setRegisterStep("qrcode");
     }, []);
 
     const handleClose = useCallback(() => {
@@ -111,6 +118,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
     const switchTab = (nextTab) => {
         if (loading) return;
         setTab(nextTab);
+        setRegisterStep("qrcode");
         setMessage("");
     };
 
@@ -122,6 +130,15 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
     const handlePasswordChange = (value) => {
         if (message) setMessage("");
         setPassword(value);
+    };
+
+    const handleConfirmPasswordChange = (value) => {
+        if (message) setMessage("");
+        setConfirmPassword(value);
+    };
+
+    const togglePasswordVisibility = () => {
+        setShowPassword((prev) => !prev);
     };
 
     const handleQqChange = (value) => {
@@ -178,9 +195,10 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
         const normalizedUsername = username.trim();
         const normalizedQq = qq.trim();
         const normalizedInviteCode = inviteCode.trim();
-        if (!normalizedUsername || !password || !normalizedInviteCode || !normalizedQq) return setMessage("请填写用户名、密码、QQ号和邀请码");
+        if (!normalizedUsername || !password || !confirmPassword || !normalizedInviteCode || !normalizedQq) return setMessage("请填写用户名、密码、QQ号和邀请码");
         if (normalizedUsername.length > MAX_USERNAME_LENGTH) return setMessage(`用户名不能超过 ${MAX_USERNAME_LENGTH} 个字符`);
         if (password.length > MAX_PASSWORD_LENGTH) return setMessage(`密码不能超过 ${MAX_PASSWORD_LENGTH} 个字符`);
+        if (password !== confirmPassword) return setMessage("两次输入的密码不一致");
         if (normalizedQq.length > 20) return setMessage(`QQ号不能超过 20 个字符`);
         if (normalizedInviteCode.length > MAX_INVITE_CODE_LENGTH) return setMessage(`邀请码不能超过 ${MAX_INVITE_CODE_LENGTH} 个字符`);
         setLoading(true);
@@ -215,7 +233,11 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
     };
     const isSuccessMessage = message.includes("成功");
     const modeText = tab === "login" ? "登录已有账号" : "注册新账号";
-    const modeHint = tab === "login" ? "输入账号密码后登录" : "填写邀请码后创建账号并自动登录";
+    const modeHint = tab === "login"
+        ? "输入账号密码后登录"
+        : registerStep === "qrcode"
+            ? "请先扫描二维码加入QQ群获取邀请码"
+            : "填写邀请码后创建账号并自动登录";
     const submitButtonText = tab === "login"
         ? (loading ? "登录中..." : "登录账号")
         : (loading ? "注册中..." : "注册并登录");
@@ -334,6 +356,44 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         {submitButtonText}
                     </Button>
                 </form>
+            ) : registerStep === "qrcode" ? (
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: UI_COLORS.textStrong, lineHeight: 1.6 }}>
+                        请使用 QQ 扫描下方二维码加入群聊，<br />在群内获取邀请码后再继续注册。
+                    </p>
+                    <img
+                        src={qrcodeImg}
+                        alt="QQ群二维码"
+                        style={{
+                            width: 200,
+                            height: 200,
+                            display: 'block',
+                            margin: '0 auto 16px auto',
+                            border: `1px solid ${UI_COLORS.border}`,
+                            borderRadius: 8
+                        }}
+                    />
+                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: UI_COLORS.textStrong, lineHeight: 1.6 }}>
+                        东方饭联地图：871393095
+                    </p>
+                    <Button
+                        type="button"
+                        full
+                        onClick={() => setRegisterStep("form")}
+                        style={{
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            border: `1px solid ${UI_COLORS.primaryActionBorder}`,
+                            background: UI_COLORS.primaryAction,
+                            color: "#fff",
+                            fontWeight: 700,
+                            letterSpacing: "0.02em",
+                            cursor: "pointer"
+                        }}
+                    >
+                        已获取邀请码，继续注册
+                    </Button>
+                </div>
             ) : (
                 <form onSubmit={handleRegister}>
                     <div>
@@ -350,16 +410,79 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                     </div>
                     <div style={{ marginTop: 10 }}>
                         <label htmlFor="auth-password-register" style={labelStyle}>密码</label>
-                        <TextInput
-                            id="auth-password-register"
-                            type="password"
-                            placeholder="设置一个登录密码"
-                            value={password}
-                            autoComplete="new-password"
-                            maxLength={MAX_PASSWORD_LENGTH}
-                            onChange={(e) => handlePasswordChange(e.target.value)}
-                            style={{ width: '100%' }}
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <TextInput
+                                id="auth-password-register"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="设置一个登录密码"
+                                value={password}
+                                autoComplete="new-password"
+                                maxLength={MAX_PASSWORD_LENGTH}
+                                onChange={(e) => handlePasswordChange(e.target.value)}
+                                style={{ width: '100%', paddingRight: 40 }}
+                            />
+                            <button
+                                type="button"
+                                onClick={togglePasswordVisibility}
+                                tabIndex={-1}
+                                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                                style={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    cursor: 'pointer',
+                                    padding: 4,
+                                    lineHeight: 0,
+                                    color: UI_COLORS.textMuted,
+                                    fontSize: 20
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                                    {showPassword ? "visibility_off" : "visibility"}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                        <label htmlFor="auth-confirm-password-register" style={labelStyle}>确认密码</label>
+                        <div style={{ position: 'relative' }}>
+                            <TextInput
+                                id="auth-confirm-password-register"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="请再次输入密码"
+                                value={confirmPassword}
+                                autoComplete="new-password"
+                                maxLength={MAX_PASSWORD_LENGTH}
+                                onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                                style={{ width: '100%', paddingRight: 40 }}
+                            />
+                            <button
+                                type="button"
+                                onClick={togglePasswordVisibility}
+                                tabIndex={-1}
+                                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                                style={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    cursor: 'pointer',
+                                    padding: 4,
+                                    lineHeight: 0,
+                                    color: UI_COLORS.textMuted,
+                                    fontSize: 20
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                                    {showPassword ? "visibility_off" : "visibility"}
+                                </span>
+                            </button>
+                        </div>
                     </div>
                     <div style={{ marginTop: 10 }}>
                         <label htmlFor="auth-qq-register" style={labelStyle}>QQ号</label>
@@ -384,9 +507,6 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             aria-describedby="auth-invite-note"
                             style={{ width: '100%' }}
                         />
-                        <div id="auth-invite-note" style={{ marginTop: 4, fontSize: 12, color: UI_COLORS.textMuted }}>
-                            邀请码请向管理员或群友索取
-                        </div>
                     </div>
                     <Button
                         type="submit"
