@@ -39,12 +39,10 @@ function buildMarkerContent(placeName, category) {
 }
 
 function buildClusterContent(count) {
-    const dark = isDarkMode();
-    const color = dark ? '#e2e8f0' : '#1f2937';
     return `
         <div style="position:relative;transform:translate(-50%, -100%);display:inline-block;">
-            <img src="${unionIcon}" style="display:block;width:56px;height:auto;pointer-events:none;" draggable="false" />
-            <div style="position:absolute;left:50%;top:60%;transform:translate(-50%, -50%);font-weight:700;font-size:13px;color:${color};text-shadow:0 0 4px rgba(255,255,255,0.8),0 0 4px rgba(255,255,255,0.8);pointer-events:none;line-height:1;">${count}</div>
+            <img src="${unionIcon}" style="display:block;width:36px;height:auto;pointer-events:none;" draggable="false" />
+            <div style="position:absolute;left:50%;top:30%;transform:translate(-50%, -50%);font-weight:800;font-size:20px;color:#111827;text-shadow:0 0 3px #ffffff,0 0 3px #ffffff,0 0 3px #ffffff;pointer-events:none;line-height:1;">${count}</div>
         </div>
     `;
 }
