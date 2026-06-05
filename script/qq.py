@@ -183,7 +183,7 @@ if __name__ == "__main__":
     job()
     
     # 定时任务：每 2 小时运行一次
-    schedule.every(2).hours.do(job)
+    schedule.every(3).minutes.do(job)
     
     print("\n已进入定时循环模式... 按 Ctrl+C 退出程序")
     while True:
