@@ -51,8 +51,15 @@ async function requireAuth(req, res, next) {
     if (!userId) return res.status(401).json({ error: "无效或已过期的 token" });
 
     try {
-        const sessionToken = await redis.get(`session:${userId}`);
-        if (!sessionToken || sessionToken !== token) {
+        let sessionToken;
+        try {
+            sessionToken = await redis.get(`session:${userId}`);
+        } catch (redisErr) {
+            // Redis 暂时不可用时不要踢掉所有用户，容忍短暂故障
+            console.error(`Redis get session:${userId} 失败:`, redisErr && redisErr.message || redisErr);
+            // 继续往下走：仅验证 JWT 签名，不做 session 级注销检查
+        }
+        if (sessionToken !== undefined && (!sessionToken || sessionToken !== token)) {
             return res.status(401).json({ error: "登录状态已失效，请重新登录" });
         }
 
