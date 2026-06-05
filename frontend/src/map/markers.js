@@ -1,15 +1,18 @@
 import { isDarkMode } from '../utils/theme';
 import { haversineDistanceMeters } from './utils';
+import yesIcon from '../img/yes.png';
+import noIcon from '../img/no.png';
+import unionIcon from '../img/union.png';
 
 export function createMarker(map, place) {
     if (!map || !window.AMap) return null;
+    const category = place.category || '';
     const marker = new window.AMap.Marker({
         position: [place.longitude, place.latitude],
         title: place.name,
         extData: place,
-        content: buildMarkerContent(place.name)
+        content: buildMarkerContent(place.name, category)
     });
-    // Do not automatically setMap here as we will manage placement manually
     return marker;
 }
 
@@ -22,28 +25,26 @@ function escapeHtml(input) {
         .replace(/'/g, '&#39;');
 }
 
-function buildMarkerContent(placeName) {
+function buildMarkerContent(placeName, category) {
     const safeName = placeName ? escapeHtml(placeName) : '';
+    const isThunder = category && String(category).includes('避雷');
+    const iconSrc = isThunder ? noIcon : yesIcon;
     const labelBg = isDarkMode() ? 'rgba(230,230,230,0.8)' : 'rgba(200,200,200,0.9)';
     return `
-            <div style="position:relative;width:18px;height:24px;transform:translate(-50%, -100%);">
-                <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;">
-                    <div style="width:14px;height:14px;background:#3b82f6;border:2px solid #ffffff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>
-                    <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #3b82f6;margin-top:-1px;"></div>
-                </div>
-                ${safeName ? `<div style=\"position:absolute;left:50%;top:24px;transform:translateX(-50%);margin-top:4px;background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;\">${safeName}</div>` : ''}
-            </div>
+        <div style="transform:translate(-50%, -100%);display:flex;flex-direction:column;align-items:center;">
+            <img src="${iconSrc}" style="display:block;width:36px;height:auto;pointer-events:none;" draggable="false" />
+            ${safeName ? `<div style="background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
+        </div>
     `;
 }
 
 function buildClusterContent(count) {
     const dark = isDarkMode();
-    const bg = dark ? 'rgba(15,23,42,0.9)' : 'rgba(255,255,255,0.95)';
-    const border = dark ? 'rgba(148,163,184,0.6)' : 'rgba(59,130,246,0.4)';
     const color = dark ? '#e2e8f0' : '#1f2937';
     return `
-        <div style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${bg};border:2px solid ${border};box-shadow:0 4px 10px rgba(0,0,0,0.2);font-weight:700;font-size:13px;color:${color};">
-            ${count}
+        <div style="position:relative;transform:translate(-50%, -100%);display:inline-block;">
+            <img src="${unionIcon}" style="display:block;width:56px;height:auto;pointer-events:none;" draggable="false" />
+            <div style="position:absolute;left:50%;top:60%;transform:translate(-50%, -50%);font-weight:700;font-size:13px;color:${color};text-shadow:0 0 4px rgba(255,255,255,0.8),0 0 4px rgba(255,255,255,0.8);pointer-events:none;line-height:1;">${count}</div>
         </div>
     `;
 }
@@ -305,8 +306,7 @@ export function renderMarkers(map, markersRef, list, onClick) {
 
             const clusterMarker = new window.AMap.Marker({
                 position: [centerLng, centerLat],
-                content: buildClusterContent(groupPlaces.length),
-                offset: new window.AMap.Pixel(-17, -17)
+                content: buildClusterContent(groupPlaces.length)
             });
             clusterMarker.on('click', () => {
                 map.panTo([centerLng, centerLat]);
