@@ -11,7 +11,8 @@ export function createMarker(map, place) {
         position: [place.longitude, place.latitude],
         title: place.name,
         extData: place,
-        content: buildMarkerContent(place.name, category)
+        content: buildMarkerContent(place.name, category),
+        anchor: 'bottom-center'
     });
     return marker;
 }
@@ -31,8 +32,8 @@ function buildMarkerContent(placeName, category) {
     const iconSrc = isThunder ? noIcon : yesIcon;
     const labelBg = isDarkMode() ? 'rgba(230,230,230,0.8)' : 'rgba(200,200,200,0.9)';
     return `
-        <div style="transform:translate(-50%, -100%);display:flex;flex-direction:column;align-items:center;">
-            <img src="${iconSrc}" style="display:block;width:36px;height:auto;pointer-events:none;" draggable="false" />
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <img src="${iconSrc}" style="display:block;width:36px;height:auto;" draggable="false" />
             ${safeName ? `<div style="background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
         </div>
     `;
@@ -40,8 +41,8 @@ function buildMarkerContent(placeName, category) {
 
 function buildClusterContent(count) {
     return `
-        <div style="position:relative;transform:translate(-50%, -100%);display:inline-block;">
-            <img src="${unionIcon}" style="display:block;width:36px;height:auto;pointer-events:none;" draggable="false" />
+        <div style="position:relative;display:inline-block;">
+            <img src="${unionIcon}" style="display:block;width:36px;height:auto;" draggable="false" />
             <div style="position:absolute;left:50%;top:30%;transform:translate(-50%, -50%);font-weight:800;font-size:20px;color:#111827;text-shadow:0 0 3px #ffffff,0 0 3px #ffffff,0 0 3px #ffffff;pointer-events:none;line-height:1;">${count}</div>
         </div>
     `;
@@ -304,7 +305,8 @@ export function renderMarkers(map, markersRef, list, onClick) {
 
             const clusterMarker = new window.AMap.Marker({
                 position: [centerLng, centerLat],
-                content: buildClusterContent(groupPlaces.length)
+                content: buildClusterContent(groupPlaces.length),
+                anchor: 'bottom-center'
             });
             clusterMarker.on('click', () => {
                 map.panTo([centerLng, centerLat]);
