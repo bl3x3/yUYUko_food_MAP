@@ -374,7 +374,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         }}
                     />
                     <p style={{ margin: "0 0 12px 0", fontSize: 14, color: UI_COLORS.textStrong, lineHeight: 1.6 }}>
-                        东方饭联地图：871393095
+                        东方饭联地图反馈群：994716945
                     </p>
                     <Button
                         type="button"
