@@ -138,7 +138,7 @@ export default function MapUI(props) {
         setNavPickerOpen(true);
     };
 
-    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(true);
     const [searchResultsVisible, setSearchResultsVisible] = useState(true);
     const [detailOpen, setDetailOpen] = useState(false);
     const [favPageOpen, setFavPageOpen] = useState(false);
@@ -146,11 +146,51 @@ export default function MapUI(props) {
     const [favLoading, setFavLoading] = useState(false);
     const [favError, setFavError] = useState('');
     const [navPickerOpen, setNavPickerOpen] = useState(false);
+    const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= 500);
     const inputRef = useRef(null);
     const popupRef = useRef(null);
+    const searchBarRef = useRef(null);
+    const dinnerBtnRef = useRef(null);
     const [popupLayout, setPopupLayout] = useState(null);
     const dark = useDarkMode();
-    const hideNonSearchButtons = searchOpen;
+    const hideNonSearchButtons = false;
+
+    useEffect(() => {
+        const onResize = () => setIsNarrow(window.innerWidth <= 500);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    // Detect overlap between search bar and dinner button (wide mode only)
+    useLayoutEffect(() => {
+        if (isNarrow) return;
+        const searchEl = searchBarRef.current;
+        const dinnerEl = dinnerBtnRef.current;
+        if (!searchEl) return;
+
+        const updatePosition = () => {
+            const viewportWidth = window.innerWidth;
+            const searchWidth = searchEl.getBoundingClientRect().width;
+            if (!searchWidth) return;
+            const centeredLeft = (viewportWidth - searchWidth) / 2;
+
+            if (dinnerEl && !pickerMode) {
+                const dinnerRect = dinnerEl.getBoundingClientRect();
+                const minLeft = dinnerRect.right + 15;
+                if (centeredLeft < minLeft) {
+                    searchEl.style.left = `${minLeft}px`;
+                    searchEl.style.transform = 'none';
+                    return;
+                }
+            }
+            searchEl.style.left = '50%';
+            searchEl.style.transform = 'translateX(-50%)';
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        return () => window.removeEventListener('resize', updatePosition);
+    }, [isNarrow, pickerMode]);
 
     useEffect(() => {
         if (!selectedPlace) setNavPickerOpen(false);
@@ -223,36 +263,7 @@ export default function MapUI(props) {
         return () => window.removeEventListener('resize', onResize);
     }, [selectedPlace, popupPoint]);
 
-    useEffect(() => {
-        if (!searchOpen) return;
-        const onKey = (e) => {
-            if (e.key === 'Escape') setSearchOpen(false);
-        };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [searchOpen]);
-
-    useEffect(() => {
-        const map = mapRef?.current;
-        if (!searchOpen || !map || (searchTerm && searchTerm.trim())) return;
-
-        const closeIfEmpty = () => setSearchOpen(false);
-        const events = ['click', 'movestart', 'zoomstart', 'dragstart'];
-        events.forEach((eventName) => {
-            if (typeof map.on === 'function') map.on(eventName, closeIfEmpty);
-        });
-
-        return () => {
-            events.forEach((eventName) => {
-                if (typeof map.off === 'function') map.off(eventName, closeIfEmpty);
-            });
-        };
-    }, [searchOpen, searchTerm, mapRef]);
-
-    useEffect(() => {
-        if (!searchResetKey) return;
-        setSearchOpen(false);
-    }, [searchResetKey]);
+    // search bar stays open by default — collapse behaviors removed
 
     // Load favorites when panel opens
     useEffect(() => {
@@ -300,11 +311,6 @@ export default function MapUI(props) {
     };
 
     const handleSearchButtonClick = () => {
-        if (!searchOpen) {
-            setSearchOpen(true);
-            setTimeout(() => inputRef.current && inputRef.current.focus(), 180);
-            return;
-        }
         if (!searchTerm || !searchTerm.trim()) return;
         setSearchResultsVisible(false);
         searchServer({ q: searchTerm, includeUnmarked: false, autoFit: false });
@@ -397,8 +403,16 @@ export default function MapUI(props) {
                 <Notice title="正在选择聚餐地点" tone="warning" />
             )}
 
-            <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
-                <div style={{ position: 'relative', width: 320, height: 44, zIndex: 2001 }}>
+            <div ref={searchBarRef} style={(() => {
+                const base = { position: "absolute", bottom: 12, zIndex: 2000 };
+                return isNarrow
+                    ? { ...base, left: 12, right: 12 }
+                    : { ...base, left: '50%', transform: 'translateX(-50%)' };
+            })()}>
+                <div style={{
+                    position: 'relative', height: 44, zIndex: 2001,
+                    width: isNarrow ? '100%' : 'min(420px, calc(100vw - 104px))'
+                }}>
                     <input
                         ref={inputRef}
                         placeholder="搜索关键词（例如：火锅/店名）"
@@ -425,9 +439,10 @@ export default function MapUI(props) {
                         disabled={!mapReady || searching}
                         style={{
                             position: 'absolute',
-                            right: 52,
+                            left: 12,
                             top: 0,
                             height: 44,
+                            right: 56,
                             boxSizing: 'border-box',
                             padding: '6px 34px 6px 12px',
                             borderRadius: 22,
@@ -435,25 +450,19 @@ export default function MapUI(props) {
                             background: dark ? '#0b1220' : '#fff',
                             color: dark ? '#e5e7eb' : 'inherit',
                             outline: 'none',
-                            transformOrigin: 'right center',
-                            transform: searchOpen ? 'scaleX(1)' : 'scaleX(0)',
-                            transition: 'transform 240ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease, box-shadow 200ms ease',
-                            opacity: searchOpen ? 1 : 0,
-                            width: 220,
-                            pointerEvents: searchOpen ? 'auto' : 'none',
-                            boxShadow: searchOpen ? `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}, 0 0 8px ${hexToRgba(customThemeColor, 0.25)}` : 'none',
+                            boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}, 0 0 8px ${hexToRgba(customThemeColor, 0.25)}`,
                             zIndex: 2002
                         }}
                     />
 
-                    {searchOpen && (
+                    {searchTerm && (
                         <Button
                             onClick={handleClearSearchInput}
                             title="清空搜索内容"
                             disabled={!mapReady || searching}
                             style={{
                                 position: 'absolute',
-                                right: 60,
+                                right: 64,
                                 top: '50%',
                                 transform: 'translateY(-50%)',
                                 width: 20,
@@ -470,24 +479,23 @@ export default function MapUI(props) {
                                 color: dark ? '#e5e7eb' : '#4b5563',
                                 cursor: (!mapReady || searching) ? 'not-allowed' : 'pointer',
                                 opacity: (!mapReady || searching) ? 0.55 : 1,
-                                zIndex: 2003,
-                                pointerEvents: searchOpen ? 'auto' : 'none'
+                                zIndex: 2003
                             }}
                         >
                             ×
                         </Button>
                     )}
 
-                    {searchOpen && searchTerm && searchResultsVisible && (spLoading || spResults) && (
+                    {searchTerm && searchResultsVisible && (spLoading || spResults) && (
                         <ScrollableView style={{
                             position: 'absolute',
-                            top: 48,
+                            bottom: 48,
                             right: 0,
-                            width: 320,
+                            width: '100%',
                             maxHeight: '60vh',
                             background: dark ? '#0b1220' : '#fff',
                             borderRadius: 8,
-                            boxShadow: searchOpen ? `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}` : 'none',
+                            boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                             border: dark ? '1px solid rgba(255,255,255,0.06)' : `1px solid ${hexToRgba(customThemeColor, 0.5)}`,
                             zIndex: 2002,
                             display: 'flex',
@@ -547,7 +555,7 @@ export default function MapUI(props) {
             </div>
 
             {!hideNonSearchButtons && (
-                <div style={{ position: "absolute", left: 16, bottom: 32, zIndex: 2000 }}>
+                <div ref={dinnerBtnRef} style={{ position: "absolute", left: 16, bottom: isNarrow ? 68 : 12, zIndex: 2000 }}>
                     {pickerMode ? (
                         <Tooltip text="返回聚餐创建" placement="top">
                             <div style={{ display: "inline-block" }}>
@@ -617,9 +625,45 @@ export default function MapUI(props) {
             )}
 
             {!hideNonSearchButtons && (
-                <div style={{ position: "absolute", right: 8, bottom: 8, zIndex: 2000 }}>
+                <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
-                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')} placement="top">
+                        <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
+                            v1.7.1
+                        </div>
+
+                        {!pickerMode && (
+                            <div style={{ display: "inline-block" }}>
+                                <Tooltip text={addPlaceTipText} placement="left">
+                                    <div style={{ display: "inline-block" }}>
+                                        <Button
+                                            onClick={handleToggleAddMode}
+                                            disabled={!mapReady || authPending}
+                                            aria-label={addPlaceTipText}
+                                            style={{
+                                                width: 44,
+                                                height: 44,
+                                                padding: 0,
+                                                borderRadius: '50%',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: addMode ? '#e02424' : customThemeColor,
+                                                color: '#fff',
+                                                border: 'none',
+                                                boxShadow: addMode ? '0 4px 12px rgba(224,36,36,0.2)' : '0 4px 12px rgba(0,47,167,0.2)',
+                                                transition: 'background 180ms ease, transform 220ms ease',
+                                                cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
+                                                opacity: (!mapReady || authPending) ? 0.6 : 1
+                                            }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36, transform: addMode ? 'rotate(-45deg)' : 'rotate(0deg)', transition: 'transform 220ms ease' }}>add</span>
+                                        </Button>
+                                    </div>
+                                </Tooltip>
+                            </div>
+                        )}
+
+                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')} placement="left">
                             <div style={{ display: "inline-block" }}>
                                 <Button
                                     onClick={() => setFavPageOpen(v => !v)}
@@ -647,73 +691,37 @@ export default function MapUI(props) {
                         </Tooltip>
 
                         {!pickerMode && (
-                            <>
-                                <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="top">
-                                    <div style={{ display: "inline-block" }}>
-                                        <Button
-                                            onClick={handleLocateMe}
-                                            disabled={!mapReady || locating}
-                                            aria-label="点击获取当前位置并添加标记点"
-                                            style={{
-                                                width: 44,
-                                                height: 44,
-                                                padding: 0,
-                                                borderRadius: '50%',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: locating ? '#089938' : customThemeColor,
-                                                color: '#fff',
-                                                border: 'none',
-                                                transition: 'background 180ms ease, transform 220ms ease',
-                                                cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
-                                                opacity: (!mapReady || authPending) ? 0.6 : 1
-                                            }}
-                                        >
-                                            {locating ? (
-                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>my_location</span>
-                                            ) : (
-                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>location_searching</span>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </Tooltip>
-
+                            <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="left">
                                 <div style={{ display: "inline-block" }}>
-                                    <Tooltip text={addPlaceTipText} placement="top">
-                                        <div style={{ display: "inline-block" }}>
-                                            <Button
-                                                onClick={handleToggleAddMode}
-                                                disabled={!mapReady || authPending}
-                                                aria-label={addPlaceTipText}
-                                                style={{
-                                                    width: 44,
-                                                    height: 44,
-                                                    padding: 0,
-                                                    borderRadius: '50%',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    background: addMode ? '#e02424' : customThemeColor,
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    boxShadow: addMode ? '0 4px 12px rgba(224,36,36,0.2)' : '0 4px 12px rgba(0,47,167,0.2)',
-                                                    transition: 'background 180ms ease, transform 220ms ease',
-                                                    cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
-                                                    opacity: (!mapReady || authPending) ? 0.6 : 1
-                                                }}
-                                            >
-                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 36, transform: addMode ? 'rotate(-45deg)' : 'rotate(0deg)', transition: 'transform 220ms ease' }}>add</span>
-                                            </Button>
-                                        </div>
-                                    </Tooltip>
+                                    <Button
+                                        onClick={handleLocateMe}
+                                        disabled={!mapReady || locating}
+                                        aria-label="点击获取当前位置并添加标记点"
+                                        style={{
+                                            width: 44,
+                                            height: 44,
+                                            padding: 0,
+                                            borderRadius: '50%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: locating ? '#089938' : customThemeColor,
+                                            color: '#fff',
+                                            border: 'none',
+                                            transition: 'background 180ms ease, transform 220ms ease',
+                                            cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
+                                            opacity: (!mapReady || authPending) ? 0.6 : 1
+                                        }}
+                                    >
+                                        {locating ? (
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>my_location</span>
+                                        ) : (
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>location_searching</span>
+                                        )}
+                                    </Button>
                                 </div>
-                            </>
+                            </Tooltip>
                         )}
-
-                        <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
-                            v1.7.0
-                        </div>
                     </div>
                 </div>
             )}
@@ -900,7 +908,7 @@ export default function MapUI(props) {
 
             {!hideNonSearchButtons && favPageOpen && (
                 <div style={{
-                    position: 'absolute', right: 60, bottom: 8,
+                    position: 'absolute', right: 60, top: 8,
                     width: 300, maxHeight: '60vh',
                     background: dark ? '#0f172a' : '#fff',
                     color: dark ? '#f8fafc' : '#333',
