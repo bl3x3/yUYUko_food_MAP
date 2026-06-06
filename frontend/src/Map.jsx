@@ -845,12 +845,12 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         return userLocationMarkerRef.current;
     };
 
-    // 当 searchResults 或 places 改变时确保 markers 与当前数据同步
+    // 当 searchResults、places 或 darkMode 改变时确保 markers 与当前数据同步
     useEffect(() => {
         if (!mapRef.current) return;
         const listToRender = searchResults == null ? places : searchResults;
         renderMarkers(mapRef.current, markersRef, listToRender || [], showPopup);
-    }, [searchResults, places]);
+    }, [searchResults, places, dark]);
 
     const submitPlace = async (payload) => {
         if (!token) {

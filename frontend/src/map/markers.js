@@ -37,11 +37,15 @@ function buildMarkerContent(placeName, category) {
     const safeName = placeName ? escapeHtml(placeName) : '';
     const isThunder = category && String(category).includes('避雷');
     const iconSrc = isThunder ? noIcon : yesIcon;
-    const labelBg = isDarkMode() ? 'rgba(230,230,230,0.8)' : 'rgba(200,200,200,0.9)';
+    const dark = isDarkMode();
+    const labelBg = dark ? 'rgba(255,255,255,0.92)' : 'rgba(100,100,100,0.88)';
+    const labelColor = dark ? '#111827' : '#ffffff';
+    const labelBorder = dark ? '3px solid rgba(0,0,0,0.15)' : '2px solid rgba(255,255,255,0.3)';
+    const labelShadow = dark ? '0 1px 4px rgba(0,0,0,0.25)' : '0 1px 3px rgba(0,0,0,0.3)';
     return `
         <div style="position:relative;width:36px;height:43px;overflow:visible;">
             <img src="${iconSrc}" style="display:block;width:36px;height:43px;" draggable="false" />
-            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);background:${labelBg};color:#111827;font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.08);white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
+            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);background:${labelBg};color:${labelColor};font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;border:${labelBorder};box-shadow:${labelShadow};white-space:nowrap;margin-top:2px;">${safeName}</div>` : ''}
         </div>
     `;
 }
