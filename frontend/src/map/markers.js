@@ -62,9 +62,14 @@ function buildClusterContent(count) {
 const MIN_CLUSTER_ZOOM = 10;
 const MAX_CLUSTER_ZOOM = 18;
 
-// 标记点视觉尺寸：图标 36×43px + 底部文字标签（约 22px 高）
-// 对角约 √(36² + 65²) ≈ 74px，取 80px 含余量以确保图标或文字重叠时触发聚类
-const PIXEL_OVERLAP_THRESHOLD = 80;
+// 地理网格剪枝用像素阈值（须大于包围盒对角线 √(48² + 65²) ≈ 81px，确保不漏检）
+const PRUNE_PIXEL_THRESHOLD = 100;
+// 独立标记包围盒：图标 36×43 + 标签居中在下 ≈ 48×65（锚点在图标底部中央，offset [-18,-43]）
+const INDIV_MARKER_HALF_W = 24; // 包围盒半宽：max(18, 标签半宽≈24)
+const INDIV_MARKER_H = 65;      // 包围盒全高：图标43 + 间距2 + 标签~20
+// 聚类标记包围盒：union.png 36×52
+const CLUSTER_ICON_W = 36;
+const CLUSTER_ICON_H = 52;
 
 /**
  * 根据当前缩放级别动态计算聚类半径（米）。
@@ -82,7 +87,7 @@ function getClusterRadius(map) {
     const lat = (center && Number.isFinite(center.lat)) ? center.lat : 30;
     // Web Mercator 分辨率：每像素对应多少米
     const metersPerPixel = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
-    return metersPerPixel * PIXEL_OVERLAP_THRESHOLD;
+    return metersPerPixel * PRUNE_PIXEL_THRESHOLD;
 }
 
 class UnionFind {
@@ -287,12 +292,25 @@ export function renderMarkers(map, markersRef, list, onClick) {
                             if (a.index >= b.index) continue;
                             const pa = list[a.index];
                             const pb = list[b.index];
-                            const dist = haversineDistanceMeters(
-                                { lat: pa.latitude, lng: pa.longitude },
-                                { lat: pb.latitude, lng: pb.longitude }
-                            );
-                            if (dist <= radius) {
-                                uf.union(a.index, b.index);
+                            // 优先用像素包围盒重叠判断（精确检查图标+文字是否重叠）
+                            const pixA = getPixelPoint(map, pa.longitude, pa.latitude);
+                            const pixB = getPixelPoint(map, pb.longitude, pb.latitude);
+                            if (pixA && pixB) {
+                                const dx = Math.abs(pixA.x - pixB.x);
+                                const dy = Math.abs(pixA.y - pixB.y);
+                                // 独立标记包围盒 ~48×65，重叠条件：|dx| < 48 && |dy| < 65
+                                if (dx < INDIV_MARKER_HALF_W * 2 && dy < INDIV_MARKER_H) {
+                                    uf.union(a.index, b.index);
+                                }
+                            } else {
+                                // 像素坐标获取失败（标记在视口外）用地理距离兜底
+                                const dist = haversineDistanceMeters(
+                                    { lat: pa.latitude, lng: pa.longitude },
+                                    { lat: pb.latitude, lng: pb.longitude }
+                                );
+                                if (dist <= radius) {
+                                    uf.union(a.index, b.index);
+                                }
                             }
                         }
                     }
@@ -308,8 +326,43 @@ export function renderMarkers(map, markersRef, list, onClick) {
             groups.get(root).push(list[i]);
         }
 
-        const clusterMarkers = [];
+        // 第二轮合并：检查各组聚类标记（36×52）是否视觉重叠，若重叠则合并
+        // 防止 Union-Find 传递链把不相邻的聚类点强行并到一起
+        const groupEntries = [];
         for (const groupPlaces of groups.values()) {
+            const sumLng = groupPlaces.reduce((s, p) => s + p.longitude, 0);
+            const sumLat = groupPlaces.reduce((s, p) => s + p.latitude, 0);
+            const centroidLng = sumLng / groupPlaces.length;
+            const centroidLat = sumLat / groupPlaces.length;
+            const pixelPos = getPixelPoint(map, centroidLng, centroidLat);
+            groupEntries.push({ places: groupPlaces, centroidLng, centroidLat, pixelPos });
+        }
+
+        const groupUF = new UnionFind(groupEntries.length);
+        for (let i = 0; i < groupEntries.length; i++) {
+            const pi = groupEntries[i].pixelPos;
+            if (!pi) continue;
+            for (let j = i + 1; j < groupEntries.length; j++) {
+                const pj = groupEntries[j].pixelPos;
+                if (!pj) continue;
+                const dx = Math.abs(pi.x - pj.x);
+                const dy = Math.abs(pi.y - pj.y);
+                // 两个聚类标记重叠条件：|dx| < 36 && |dy| < 52
+                if (dx < CLUSTER_ICON_W && dy < CLUSTER_ICON_H) {
+                    groupUF.union(i, j);
+                }
+            }
+        }
+
+        const mergedGroups = new Map();
+        for (let i = 0; i < groupEntries.length; i++) {
+            const root = groupUF.find(i);
+            if (!mergedGroups.has(root)) mergedGroups.set(root, []);
+            mergedGroups.get(root).push(...groupEntries[i].places);
+        }
+
+        const clusterMarkers = [];
+        for (const groupPlaces of mergedGroups.values()) {
             if (groupPlaces.length === 1) {
                 const place = groupPlaces[0];
                 const marker = markerByPlace.get(place) || markerByKey.get(place.id != null ? `id:${place.id}` : '');
