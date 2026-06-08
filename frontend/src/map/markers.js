@@ -62,18 +62,27 @@ function buildClusterContent(count) {
 const MIN_CLUSTER_ZOOM = 10;
 const MAX_CLUSTER_ZOOM = 18;
 
-function getClusterRadius(zoom) {
+// 标记点视觉尺寸：图标 36×43px + 底部文字标签（约 22px 高）
+// 对角约 √(36² + 65²) ≈ 74px，取 80px 含余量以确保图标或文字重叠时触发聚类
+const PIXEL_OVERLAP_THRESHOLD = 80;
+
+/**
+ * 根据当前缩放级别动态计算聚类半径（米）。
+ * 将标记点的视觉像素尺寸转换为对应缩放级别下的地理距离，
+ * 确保两个标记点在地图上的图标或文字有重叠时就会被聚类在一起。
+ */
+function getClusterRadius(map) {
+    if (!map) return 0;
+    const zoom = map.getZoom();
     if (!Number.isFinite(zoom) || zoom < MIN_CLUSTER_ZOOM) return 5000;
-    if (zoom <= 10) return 5000;
-    if (zoom <= 11) return 2500;
-    if (zoom <= 12) return 1200;
-    if (zoom <= 13) return 600;
-    if (zoom <= 14) return 300;
-    if (zoom <= 15) return 150;
-    if (zoom <= 16) return 75;
-    if (zoom <= 17) return 40;
-    if (zoom <= 18) return 20;
-    return 0;
+    if (zoom > MAX_CLUSTER_ZOOM) return 0;
+
+    // 获取当前视图中心纬度用于分辨率计算
+    const center = map.getCenter();
+    const lat = (center && Number.isFinite(center.lat)) ? center.lat : 30;
+    // Web Mercator 分辨率：每像素对应多少米
+    const metersPerPixel = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
+    return metersPerPixel * PIXEL_OVERLAP_THRESHOLD;
 }
 
 class UnionFind {
@@ -230,8 +239,7 @@ export function renderMarkers(map, markersRef, list, onClick) {
         }
         created.forEach((m) => m.setMap && m.setMap(null));
 
-        const zoom = map.getZoom();
-        const radius = getClusterRadius(zoom);
+        const radius = getClusterRadius(map);
 
         // 缩放级别超出聚类范围时，直接显示全部独立标记
         if (radius <= 0) {
