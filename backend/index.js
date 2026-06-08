@@ -30,8 +30,8 @@ const app = express();
 // so Express respects X-Forwarded-* headers and req.secure reflects the original protocol.
 app.set('trust proxy', true);
 
-const HOST = process.env.HOST || "0.0.0.0";
-const PORT = process.env.PORT || 2053;
+const HOST = process.env.HOST || "127.0.0.1";
+const PORT = process.env.PORT || 7000;
 
 const STATIC_ALLOWED_ORIGINS = [
     "http://localhost:2053",
@@ -176,35 +176,7 @@ app.use("/api/favorites", favoritesRouter);
 
 app.get("/", (req, res) => res.json({ ok: true, msg: "yUYUko Food Map Backend" }));
 
-// HTTPS support: if cert and key files exist (or set via env), run HTTPS server.
-const SSL_KEY_PATH = 'C:\\certbot\\conf\\windows_ready_dinnerparty.cc\\privkey.pem';
-const SSL_CERT_PATH = 'C:\\certbot\\conf\\windows_ready_dinnerparty.cc\\fullchain.pem';
-const FORCE_HTTPS = process.env.FORCE_HTTPS === 'true';
-
-if (fs.existsSync(SSL_KEY_PATH) && fs.existsSync(SSL_CERT_PATH)) {
-    const options = {
-        key: fs.readFileSync(SSL_KEY_PATH),
-        cert: fs.readFileSync(SSL_CERT_PATH)
-    };
-    https.createServer(options, app).listen(PORT, HOST, () => {
-        console.log(`HTTPS server running on https://${HOST}:${PORT}`);
-    });
-
-    if (FORCE_HTTPS) {
-        const http = require('http');
-        const HTTP_PORT = process.env.HTTP_PORT || 80;
-        http.createServer((req, res) => {
-            const hostHeader = req.headers.host ? req.headers.host.split(':')[0] : HOST;
-            const target = `https://${hostHeader}:${PORT}${req.url}`;
-            res.writeHead(301, { Location: target });
-            res.end();
-        }).listen(HTTP_PORT, HOST, () => {
-            console.log(`HTTP -> HTTPS redirector running on http://${HOST}:${HTTP_PORT}`);
-        });
-    }
-} else {
-    app.listen(PORT, HOST, () => {
-        console.log(`Server running on http://${HOST}:${PORT}`);
-        console.log(`TLS cert/key not found at ${SSL_CERT_PATH} and ${SSL_KEY_PATH}; running HTTP.`);
-    });
-}
+// HTTP only (reverse proxy handles HTTPS termination)
+app.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
+});
