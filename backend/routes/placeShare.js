@@ -20,7 +20,7 @@ function buildFrontendPlaceUrl(req, id) {
         return `${String(configured).replace(/\/+$/, "")}${placeParam}`;
     }
 
-    const protocol = req.protocol || "https";
+    const protocol = "https";
     const host = req.get("host") || "";
 
     // 本地开发
