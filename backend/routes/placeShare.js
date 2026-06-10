@@ -20,16 +20,16 @@ function buildFrontendPlaceUrl(req, id) {
         return `${String(configured).replace(/\/+$/, "")}${placeParam}`;
     }
 
-    const protocol = req.protocol || "http";
-    const host = req.get("host") || "localhost:2053";
-    if (/^(localhost|127\.0\.0\.1):2053$/i.test(host)) {
-        return `${protocol}://${host.replace(/:2053$/i, ":5173")}${placeParam}`;
-    }
-    if (/:2053$/i.test(host)) {
-        return `${protocol}://${host.replace(/:2053$/i, ":8443")}${placeParam}`;
+    const protocol = req.protocol || "https";
+    const host = (req.get("host") || "").replace(/:\d+$/, "");
+
+    // 本地开发
+    if (/^(localhost|127\.0\.0\.1)$/i.test(host)) {
+        return `${protocol}://${host}:5173${placeParam}`;
     }
 
-    return `${protocol}://${host}${placeParam}`;
+    // 生产环境：前端在 :8443
+    return `${protocol}://${host}:8443${placeParam}`;
 }
 
 function buildAmapNavUrl(place) {
