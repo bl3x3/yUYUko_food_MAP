@@ -21,7 +21,7 @@ function buildFrontendPlaceUrl(req, id) {
     }
 
     const protocol = req.protocol || "https";
-    const host = (req.get("host") || "").replace(/:\d+$/, "");
+    const host = req.get("host") || "";
 
     // 本地开发
     if (/^(localhost|127\.0\.0\.1)$/i.test(host)) {
