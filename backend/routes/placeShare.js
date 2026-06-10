@@ -39,24 +39,60 @@ function buildAmapNavUrl(place) {
     return `https://uri.amap.com/navigation?to=${lng},${lat},${label}&mode=car&src=yUYUko_food_MAP`;
 }
 
-function buildShareDescription(place) {
+function truncate(str, max) {
+    const s = String(str || '');
+    return s.length <= max ? s : s.slice(0, max - 1) + '…';
+}
+
+function buildOgDescription(place) {
     const parts = [];
-    if (place?.name) parts.push(place.name);
     if (place?.category) parts.push(place.category);
-    if (place?.address) parts.push(place.address);
-    return parts.join(" · ") || "东方饭联地图地点";
+    if (place?.description) parts.push(place.description);
+    return parts.join(" · ") || place?.name || "东方饭联地图地点";
+}
+
+function getOgImageUrl(place, frontendBase) {
+    // 优先使用地点的第一张外观图片
+    try {
+        const exteriorImages = JSON.parse(place?.exterior_images || '[]');
+        if (Array.isArray(exteriorImages) && exteriorImages.length > 0) {
+            const img = exteriorImages[0];
+            if (img && typeof img === 'string') {
+                // 相对路径补全为绝对路径
+                if (img.startsWith('/')) return `${frontendBase}${img}`;
+                if (img.startsWith('http')) return img;
+                return `${frontendBase}/${img}`;
+            }
+        }
+    } catch (e) { /* ignore */ }
+    // 回退：favicon
+    return `${frontendBase}/favicon.ico`;
 }
 
 function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
-    const title = `${place.name || "地点"} | 东方饭联地图`;
-    const description = buildShareDescription(place);
-    const safeTitle = htmlEscape(title);
-    const safeDescription = htmlEscape(description);
-    const safeName = htmlEscape(place.name || "未命名地点");
-    const safeCategory = htmlEscape(place.category || "未分类");
+    const siteName = '东方饭联地图';
+    const placeName = place.name || '地点';
+
+    // <title>: max 65 chars
+    const pageTitle = truncate(`${placeName} | ${siteName}`, 65);
+    // meta description: max 155 chars
+    const metaDesc = truncate(buildOgDescription(place), 155);
+    // og:title: max 35 chars
+    const ogTitle = truncate(placeName, 35);
+    // og:description: max 65 chars
+    const ogDesc = truncate(buildOgDescription(place), 65);
+
+    const safePageTitle = htmlEscape(pageTitle);
+    const safeMetaDesc = htmlEscape(metaDesc);
+    const safeOgTitle = htmlEscape(ogTitle);
+    const safeOgDesc = htmlEscape(ogDesc);
+    const safeName = htmlEscape(placeName);
     const safeAddress = htmlEscape(place.address || "");
     const safeFrontendUrl = htmlEscape(frontendUrl);
     const safeShareUrl = htmlEscape(shareUrl);
+
+    const frontendBase = frontendUrl.replace(/\/\?.*$/, '').replace(/\/$/, '');
+    const ogImageUrl = getOgImageUrl(place, frontendBase);
 
     const actionLabel = isNavShare ? "打开高德地图导航" : "在地图中查看";
     const actionUrl = isNavShare ? htmlEscape(buildAmapNavUrl(place)) : safeFrontendUrl;
@@ -66,18 +102,22 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${safeTitle}</title>
-  <meta name="description" content="${safeDescription}" />
+  <title>${safePageTitle}</title>
+  <meta name="description" content="${safeMetaDesc}" />
 
   <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="东方饭联地图" />
-  <meta property="og:title" content="${safeTitle}" />
-  <meta property="og:description" content="${safeDescription}" />
+  <meta property="og:site_name" content="${htmlEscape(siteName)}" />
+  <meta property="og:title" content="${safeOgTitle}" />
+  <meta property="og:description" content="${safeOgDesc}" />
   <meta property="og:url" content="${safeShareUrl}" />
+  <meta property="og:image" content="${htmlEscape(ogImageUrl)}" />
+  <meta property="og:image:width" content="600" />
+  <meta property="og:image:height" content="315" />
 
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="${safeTitle}" />
-  <meta name="twitter:description" content="${safeDescription}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${safeOgTitle}" />
+  <meta name="twitter:description" content="${safeOgDesc}" />
+  <meta name="twitter:image" content="${htmlEscape(ogImageUrl)}" />
 
   <style>
     body { margin:0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background:#f4f7fb; color:#102a43; }
