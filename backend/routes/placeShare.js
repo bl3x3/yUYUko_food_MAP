@@ -157,7 +157,7 @@ router.get("/:id", (req, res) => {
 
         const isBot = BOT_UA_REGEX.test(req.get("user-agent") || "");
 
-        const shareUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+        const shareUrl = buildFrontendPlaceUrl(req, placeId).replace(/\/\?.*$/, '') + req.originalUrl;
         const frontendUrl = buildFrontendPlaceUrl(req, placeId);
 
         if (isNavShare) {
