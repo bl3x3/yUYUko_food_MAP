@@ -56,13 +56,13 @@ function buildNavigationTargets(place) {
 function buildPlaceShareUrl(place) {
     const id = place?.id;
     if (!id) return '';
-    return `${window.location.origin}/?place=${id}`;
+    return `${window.location.origin}/p/${id}`;
 }
 
 function buildAmapShareUrl(place) {
     const id = place?.id;
     if (!id) return '';
-    return `${window.location.origin}/?place=${id}&nav=amap`;
+    return `${window.location.origin}/p/${id}?nav=amap`;
 }
 
 async function buildPlaceClipboardText(place, backendUrl) {

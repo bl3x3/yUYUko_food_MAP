@@ -28,8 +28,8 @@ function buildFrontendPlaceUrl(req, id) {
         return `${protocol}://${host}:5173${placeParam}`;
     }
 
-    // 生产环境：前端在 :8443
-    return `${protocol}://${host}:8443${placeParam}`;
+    // 生产环境
+    return `https://dinnerparty.cc${placeParam}`;
 }
 
 function buildAmapNavUrl(place) {
@@ -58,18 +58,6 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     const safeFrontendUrl = htmlEscape(frontendUrl);
     const safeShareUrl = htmlEscape(shareUrl);
 
-    // Simple SVG OG image with place name
-    const ogImageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#0f172a"/>
-  <rect x="40" y="40" width="1120" height="550" rx="24" fill="#1e293b"/>
-  <text x="600" y="240" text-anchor="middle" fill="#ffffff" font-size="72" font-family="sans-serif" font-weight="bold">${safeName}</text>
-  <text x="600" y="320" text-anchor="middle" fill="#94a3b8" font-size="36" font-family="sans-serif">${safeCategory}</text>
-  <text x="600" y="380" text-anchor="middle" fill="#64748b" font-size="28" font-family="sans-serif">${safeAddress}</text>
-  <text x="600" y="480" text-anchor="middle" fill="#3b82f6" font-size="32" font-family="sans-serif">📍 在地图中查看</text>
-</svg>`;
-
-    const ogImageDataUri = `data:image/svg+xml,${encodeURIComponent(ogImageSvg)}`;
-
     const actionLabel = isNavShare ? "打开高德地图导航" : "在地图中查看";
     const actionUrl = isNavShare ? htmlEscape(buildAmapNavUrl(place)) : safeFrontendUrl;
 
@@ -86,12 +74,10 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
   <meta property="og:title" content="${safeTitle}" />
   <meta property="og:description" content="${safeDescription}" />
   <meta property="og:url" content="${safeShareUrl}" />
-  <meta property="og:image" content="${ogImageDataUri}" />
 
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDescription}" />
-  <meta name="twitter:image" content="${ogImageDataUri}" />
 
   <style>
     body { margin:0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background:#f4f7fb; color:#102a43; }

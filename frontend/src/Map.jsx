@@ -1031,6 +1031,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     return;
                 }
 
+                setSearchTerm(place.name || '');
                 setSearchResults([place]);
                 armSkipAutoSearch(800);
                 mapRef.current.setCenter([place.longitude, place.latitude]);
