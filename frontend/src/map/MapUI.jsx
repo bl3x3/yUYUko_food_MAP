@@ -53,32 +53,32 @@ function buildNavigationTargets(place) {
 
 // ---- 分享工具函数 ----
 
-function buildPlaceShareUrl(place) {
+function buildPlaceShareUrl(place, backendUrl) {
     const id = place?.id;
     if (!id) return '';
-    const origin = window.location.origin;
-    // 开发环境 localhost:5173 → 后端在 :2053；生产环境保持一致
-    return `${origin}/p/${id}`;
+    const base = String(backendUrl || '').replace(/\/+$/, '');
+    return `${base}/p/${id}`;
 }
 
-function buildAmapShareUrl(place) {
+function buildAmapShareUrl(place, backendUrl) {
     const id = place?.id;
     if (!id) return '';
-    const origin = window.location.origin;
-    return `${origin}/p/${id}?nav=amap`;
+    const base = String(backendUrl || '').replace(/\/+$/, '');
+    return `${base}/p/${id}?nav=amap`;
 }
 
 async function buildPlaceClipboardText(place, backendUrl) {
     const name = place?.name || '未知地点';
-    const link = buildPlaceShareUrl(place);
+    const link = buildPlaceShareUrl(place, backendUrl);
 
-    // 优先使用已有地址，否则通过高德逆地理编码获取详细地址
+    // 优先使用已有地址，否则通过高德逆地理编码 API 获取详细地址
     let address = place?.address || '';
     if (!address && place?.longitude && place?.latitude) {
         try {
             const lng = place.longitude;
             const lat = place.latitude;
-            const res = await fetch(`${backendUrl}/_AMapService/v3/geocode/regeo?location=${lng},${lat}&extensions=all`);
+            const key = '51097d0d47c2a1d341cf81b0ab82266d';
+            const res = await fetch(`https://restapi.amap.com/v3/geocode/regeo?location=${lng},${lat}&key=${key}&extensions=all`);
             if (res.ok) {
                 const data = await res.json();
                 if (data?.regeocode?.formatted_address) {
@@ -782,35 +782,6 @@ export default function MapUI(props) {
                             </div>
                         </Tooltip>
 
-                        {selectedPlace && (
-                            <Tooltip text="分享此地点" placement="left">
-                                <div style={{ display: "inline-block" }}>
-                                    <Button
-                                        onClick={() => setShareOpen(true)}
-                                        aria-label="分享此地点"
-                                        style={{
-                                            width: 44,
-                                            height: 44,
-                                            padding: 0,
-                                            borderRadius: '50%',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: shareOpen ? '#0f609b' : customThemeColor,
-                                            color: '#fff',
-                                            border: 'none',
-                                            boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
-                                            transition: 'background 180ms ease, transform 220ms ease',
-                                            cursor: 'pointer',
-                                            opacity: 1
-                                        }}
-                                    >
-                                        <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>share</span>
-                                    </Button>
-                                </div>
-                            </Tooltip>
-                        )}
-
                         {!pickerMode && (
                             <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'}>
                                 <div style={{ display: "inline-block" }}>
@@ -908,6 +879,14 @@ export default function MapUI(props) {
                                             style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                             导航
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip text="分享此地点">
+                                        <Button
+                                            onClick={() => setShareOpen(true)}
+                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            分享
                                         </Button>
                                     </Tooltip>
                                     {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
@@ -1054,7 +1033,7 @@ export default function MapUI(props) {
                                 label="分享到 QQ / 微信"
                                 description="在 QQ 或微信中打开，会自动显示地点详情卡片"
                                 onClick={() => {
-                                    const url = buildPlaceShareUrl(selectedPlace);
+                                    const url = buildPlaceShareUrl(selectedPlace, backendUrl);
                                     if (navigator.share) {
                                         setShareOpen(false);
                                         navigator.share({ title: selectedPlace.name, text: `${selectedPlace.name} - 东方饭联地图`, url }).catch(() => {});
@@ -1088,7 +1067,7 @@ export default function MapUI(props) {
                                 label="分享高德导航链接"
                                 description="在 QQ 或微信中打开链接可跳转高德地图导航"
                                 onClick={() => {
-                                    const amapUrl = buildAmapShareUrl(selectedPlace);
+                                    const amapUrl = buildAmapShareUrl(selectedPlace, backendUrl);
                                     if (navigator.share) {
                                         setShareOpen(false);
                                         navigator.share({ title: `导航到 ${selectedPlace.name}`, text: `导航到 ${selectedPlace.name}`, url: amapUrl }).catch(() => {});
