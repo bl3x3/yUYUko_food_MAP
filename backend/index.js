@@ -164,6 +164,7 @@ init();
 
 app.use('/api', searchRouter);
 app.use("/places", placesRouter);
+app.use("/p", require("./routes/placeShare"));
 app.use("/comments", commentsRouter);
 app.use("/users", usersRouter);
 app.use("/notices", noticesRouter);

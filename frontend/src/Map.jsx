@@ -1005,6 +1005,32 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         setSearchResults([item]);
     };
 
+    // 处理分享链接中的 ?place=<id> 参数：加载单个地点并居中
+    useEffect(() => {
+        if (!mapReady || !backendUrl) return;
+        const params = new URLSearchParams(window.location.search);
+        const placeId = params.get('place');
+        if (!placeId) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`${backendUrl}/places/${placeId}`);
+                if (!res.ok || cancelled) return;
+                const place = await res.json();
+                if (!place || !place.longitude || !place.latitude || cancelled) return;
+                setSearchResults([place]);
+                armSkipAutoSearch(800);
+                mapRef.current.setCenter([place.longitude, place.latitude]);
+                mapRef.current.setZoom(16);
+            } catch (e) {
+                console.warn('加载分享地点失败', e);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [mapReady, backendUrl]);
+
     const handleToggleAddMode = () => {
         if (!mapReady || authPending) return;
         if (!canWrite) {
@@ -1383,6 +1409,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 pickerMode={pickerMode}
                 onPickPlace={onPickPlace}
                 onPickerClose={onPickerClose}
+                showTip={showTip}
             />
 
             {commentOpen && selectedPlace && (

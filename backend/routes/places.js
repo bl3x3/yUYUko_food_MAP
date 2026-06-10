@@ -81,6 +81,20 @@ router.get("/nearby", (req, res) => {
     });
 });
 
+// 获取单个地点
+router.get("/:id", (req, res) => {
+    const sql = `SELECT p.*, u.username AS creator_name, uu.username AS updated_by_name
+                 FROM Place p
+                 LEFT JOIN User u ON p.creator_id = u.id
+                 LEFT JOIN User uu ON p.updated_by = uu.id
+                 WHERE p.id = ?`;
+    db.get(sql, [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: "地点不存在" });
+        res.json(row);
+    });
+});
+
 // 添加地点
 router.post("/", requireAuth, (req, res) => {
     const { name, description, latitude, longitude, category, exterior_images, menu_images } = req.body;

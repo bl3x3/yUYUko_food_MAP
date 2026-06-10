@@ -51,6 +51,93 @@ function buildNavigationTargets(place) {
     ];
 }
 
+// ---- 分享工具函数 ----
+
+function buildPlaceShareUrl(place) {
+    const id = place?.id;
+    if (!id) return '';
+    const origin = window.location.origin;
+    // 开发环境 localhost:5173 → 后端在 :2053；生产环境保持一致
+    return `${origin}/p/${id}`;
+}
+
+function buildAmapShareUrl(place) {
+    const id = place?.id;
+    if (!id) return '';
+    const origin = window.location.origin;
+    return `${origin}/p/${id}?nav=amap`;
+}
+
+async function buildPlaceClipboardText(place, backendUrl) {
+    const name = place?.name || '未知地点';
+    const link = buildPlaceShareUrl(place);
+
+    // 优先使用已有地址，否则通过高德逆地理编码获取详细地址
+    let address = place?.address || '';
+    if (!address && place?.longitude && place?.latitude) {
+        try {
+            const lng = place.longitude;
+            const lat = place.latitude;
+            const res = await fetch(`${backendUrl}/_AMapService/v3/geocode/regeo?location=${lng},${lat}&extensions=all`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data?.regeocode?.formatted_address) {
+                    address = data.regeocode.formatted_address;
+                }
+            }
+        } catch (e) {
+            // 忽略逆地理编码失败
+        }
+    }
+
+    return `${name}${address ? '\n' + address : ''}\n${link}`;
+}
+
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (e) {
+        // 降级方案
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try { document.execCommand('copy'); return true; } catch (e2) { return false; }
+        finally { document.body.removeChild(textarea); }
+    }
+}
+
+// ---- ShareOptionButton 组件 ----
+
+function ShareOptionButton({ icon, label, description, onClick, dark }) {
+    return (
+        React.createElement(Button, {
+            onClick,
+            style: {
+                background: 'transparent',
+                border: dark ? '1px solid rgba(255,255,255,0.08)' : '2px solid rgba(0,0,0,0.12)',
+                color: dark ? '#e5e7eb' : undefined,
+                padding: '10px 12px',
+                borderRadius: 6,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10
+            },
+            full: true
+        },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: 24, flexShrink: 0, marginTop: 2 } }, icon),
+            React.createElement('div', { style: { flex: 1 } },
+                React.createElement('div', { style: { fontSize: 14, fontWeight: 500 } }, label),
+                React.createElement('div', { style: { fontSize: 11, color: dark ? '#9ca3af' : '#6b7280', marginTop: 2 } }, description)
+            )
+        )
+    );
+}
+
 export default function MapUI(props) {
     const {
         places,
@@ -105,7 +192,8 @@ export default function MapUI(props) {
         isAuthenticated,
         pickerMode,
         onPickPlace,
-        onPickerClose
+        onPickerClose,
+        showTip
     } = props;
 
     const ua = navigator.userAgent || '';
@@ -146,6 +234,7 @@ export default function MapUI(props) {
     const [favLoading, setFavLoading] = useState(false);
     const [favError, setFavError] = useState('');
     const [navPickerOpen, setNavPickerOpen] = useState(false);
+    const [shareOpen, setShareOpen] = useState(false);
     const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= 500);
     const inputRef = useRef(null);
     const popupRef = useRef(null);
@@ -193,7 +282,10 @@ export default function MapUI(props) {
     }, [isNarrow, pickerMode]);
 
     useEffect(() => {
-        if (!selectedPlace) setNavPickerOpen(false);
+        if (!selectedPlace) {
+            setNavPickerOpen(false);
+            setShareOpen(false);
+        }
     }, [selectedPlace]);
 
     const { results: spResults, loading: spLoading } = useSearchPanel(searchTerm, mapRef, backendUrl, mapReady, userLocationMarkerRef, places);
@@ -690,6 +782,35 @@ export default function MapUI(props) {
                             </div>
                         </Tooltip>
 
+                        {selectedPlace && (
+                            <Tooltip text="分享此地点" placement="left">
+                                <div style={{ display: "inline-block" }}>
+                                    <Button
+                                        onClick={() => setShareOpen(true)}
+                                        aria-label="分享此地点"
+                                        style={{
+                                            width: 44,
+                                            height: 44,
+                                            padding: 0,
+                                            borderRadius: '50%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: shareOpen ? '#0f609b' : customThemeColor,
+                                            color: '#fff',
+                                            border: 'none',
+                                            boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                            transition: 'background 180ms ease, transform 220ms ease',
+                                            cursor: 'pointer',
+                                            opacity: 1
+                                        }}
+                                    >
+                                        <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 30 }}>share</span>
+                                    </Button>
+                                </div>
+                            </Tooltip>
+                        )}
+
                         {!pickerMode && (
                             <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="left">
                                 <div style={{ display: "inline-block" }}>
@@ -887,6 +1008,99 @@ export default function MapUI(props) {
                                     {target.name}
                                 </Button>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {shareOpen && selectedPlace && (
+                <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)',
+                    zIndex: 5600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16
+                }}
+                onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
+                >
+                    <div style={{
+                        width: 'min(420px, 92vw)',
+                        background: dark ? '#0b1220' : '#fff',
+                        borderRadius: 10,
+                        boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.24)',
+                        border: dark ? '1px solid #334155' : '1px solid #e5e7eb',
+                        color: dark ? '#e5e7eb' : '#111827',
+                        padding: 14
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <strong style={{ fontSize: 15 }}>分享地点</strong>
+                            <Button onClick={() => setShareOpen(false)} style={{ padding: '2px 8px', borderRadius: 4, border: 'none', background: 'transparent', fontSize: 18, lineHeight: 1, color: dark ? '#e5e7eb' : undefined }}>×</Button>
+                        </div>
+
+                        <div style={{ fontSize: 12, color: dark ? '#9ca3af' : '#6b7280', marginBottom: 10 }}>
+                            正在分享: {selectedPlace.name || '该地点'}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {/* 选项1: 分享到 QQ/微信 */}
+                            <ShareOptionButton
+                                icon="share"
+                                label="分享到 QQ / 微信"
+                                description="在 QQ 或微信中打开，会自动显示地点详情卡片"
+                                onClick={() => {
+                                    const url = buildPlaceShareUrl(selectedPlace);
+                                    if (navigator.share) {
+                                        setShareOpen(false);
+                                        navigator.share({ title: selectedPlace.name, text: `${selectedPlace.name} - 东方饭联地图`, url }).catch(() => {});
+                                    } else {
+                                        copyToClipboard(url).then(ok => {
+                                            if (ok && showTip) showTip('分享链接已复制到剪贴板');
+                                        });
+                                        setShareOpen(false);
+                                    }
+                                }}
+                                dark={dark}
+                            />
+
+                            {/* 选项2: 复制地点信息到剪贴板 */}
+                            <ShareOptionButton
+                                icon="content_copy"
+                                label="复制地点信息"
+                                description="复制地点名称、地址和链接到剪贴板"
+                                onClick={async () => {
+                                    setShareOpen(false);
+                                    const info = await buildPlaceClipboardText(selectedPlace, backendUrl);
+                                    const ok = await copyToClipboard(info);
+                                    if (ok && showTip) showTip('地点信息已复制到剪贴板');
+                                }}
+                                dark={dark}
+                            />
+
+                            {/* 选项3: 分享高德导航链接 */}
+                            <ShareOptionButton
+                                icon="navigation"
+                                label="分享高德导航链接"
+                                description="在 QQ 或微信中打开链接可跳转高德地图导航"
+                                onClick={() => {
+                                    const amapUrl = buildAmapShareUrl(selectedPlace);
+                                    if (navigator.share) {
+                                        setShareOpen(false);
+                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: `导航到 ${selectedPlace.name}`, url: amapUrl }).catch(() => {});
+                                    } else {
+                                        copyToClipboard(amapUrl).then(ok => {
+                                            if (ok && showTip) showTip('高德导航链接已复制到剪贴板');
+                                        });
+                                        setShareOpen(false);
+                                    }
+                                }}
+                                dark={dark}
+                            />
                         </div>
                     </div>
                 </div>
