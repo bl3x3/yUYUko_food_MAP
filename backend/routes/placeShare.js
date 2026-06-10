@@ -133,7 +133,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
   <div class="wrap">
     <div class="card">
       <h1>${safeName}</h1>
-      <p class="meta">${safeDescription}</p>
+      <p class="meta">${safeMetaDesc}</p>
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
       <a class="btn" href="${actionUrl}">${actionLabel}</a>
     </div>
