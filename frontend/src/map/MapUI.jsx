@@ -522,7 +522,7 @@ export default function MapUI(props) {
                     )}
 
                     <div style={{ position: 'absolute', right: 0, top: 0 }}>
-                        <Tooltip text={tipText}>
+                        <Tooltip text={tipText} placement="top">
                             <Button
                                 onClick={handleSearchButtonClick}
                                 disabled={!mapReady || searching}
@@ -633,7 +633,7 @@ export default function MapUI(props) {
 
                         {!pickerMode && (
                             <div style={{ display: "inline-block" }}>
-                                <Tooltip text={addPlaceTipText} placement="left">
+                                <Tooltip text={addPlaceTipText}>
                                     <div style={{ display: "inline-block" }}>
                                         <Button
                                             onClick={handleToggleAddMode}
@@ -663,7 +663,7 @@ export default function MapUI(props) {
                             </div>
                         )}
 
-                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')} placement="left">
+                        <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : (favPageOpen ? '关闭收藏夹' : '展开收藏夹')}>
                             <div style={{ display: "inline-block" }}>
                                 <Button
                                     onClick={() => setFavPageOpen(v => !v)}
@@ -691,7 +691,7 @@ export default function MapUI(props) {
                         </Tooltip>
 
                         {!pickerMode && (
-                            <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'} placement="left">
+                            <Tooltip text={authPending ? '正在验证登录状态，请稍候再试' : '定位/我的位置'}>
                                 <div style={{ display: "inline-block" }}>
                                     <Button
                                         onClick={handleLocateMe}
