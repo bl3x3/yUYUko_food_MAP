@@ -53,23 +53,21 @@ function buildNavigationTargets(place) {
 
 // ---- 分享工具函数 ----
 
-function buildPlaceShareUrl(place, backendUrl) {
+function buildPlaceShareUrl(place) {
     const id = place?.id;
     if (!id) return '';
-    const base = String(backendUrl || '').replace(/\/+$/, '');
-    return `${base}/p/${id}`;
+    return `${window.location.origin}/?place=${id}`;
 }
 
-function buildAmapShareUrl(place, backendUrl) {
+function buildAmapShareUrl(place) {
     const id = place?.id;
     if (!id) return '';
-    const base = String(backendUrl || '').replace(/\/+$/, '');
-    return `${base}/p/${id}?nav=amap`;
+    return `${window.location.origin}/?place=${id}&nav=amap`;
 }
 
 async function buildPlaceClipboardText(place, backendUrl) {
     const name = place?.name || '未知地点';
-    const link = buildPlaceShareUrl(place, backendUrl);
+    const link = buildPlaceShareUrl(place);
 
     // 优先使用已有地址，否则通过高德逆地理编码 API 获取详细地址
     let address = place?.address || '';
@@ -1033,7 +1031,7 @@ export default function MapUI(props) {
                                 label="分享到 QQ / 微信"
                                 description="在 QQ 或微信中打开，会自动显示地点详情卡片"
                                 onClick={() => {
-                                    const url = buildPlaceShareUrl(selectedPlace, backendUrl);
+                                    const url = buildPlaceShareUrl(selectedPlace);
                                     if (navigator.share) {
                                         setShareOpen(false);
                                         navigator.share({ title: selectedPlace.name, text: `${selectedPlace.name} - 东方饭联地图`, url }).catch(() => {});
@@ -1067,7 +1065,7 @@ export default function MapUI(props) {
                                 label="分享高德导航链接"
                                 description="在 QQ 或微信中打开链接可跳转高德地图导航"
                                 onClick={() => {
-                                    const amapUrl = buildAmapShareUrl(selectedPlace, backendUrl);
+                                    const amapUrl = buildAmapShareUrl(selectedPlace);
                                     if (navigator.share) {
                                         setShareOpen(false);
                                         navigator.share({ title: `导航到 ${selectedPlace.name}`, text: `导航到 ${selectedPlace.name}`, url: amapUrl }).catch(() => {});

@@ -1012,6 +1012,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         const placeId = params.get('place');
         if (!placeId) return;
 
+        const isNavShare = params.get('nav') === 'amap';
+
         let cancelled = false;
         (async () => {
             try {
@@ -1019,6 +1021,16 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 if (!res.ok || cancelled) return;
                 const place = await res.json();
                 if (!place || !place.longitude || !place.latitude || cancelled) return;
+
+                if (isNavShare) {
+                    // 高德导航分享：直接跳转到高德地图导航
+                    const label = encodeURIComponent((place.name || '目的地').trim());
+                    const lng = place.longitude;
+                    const lat = place.latitude;
+                    window.location.href = `https://uri.amap.com/navigation?to=${lng},${lat},${label}&mode=car&src=yUYUko_food_MAP`;
+                    return;
+                }
+
                 setSearchResults([place]);
                 armSkipAutoSearch(800);
                 mapRef.current.setCenter([place.longitude, place.latitude]);
