@@ -28,8 +28,8 @@ function buildFrontendPlaceUrl(req, id) {
         return `${protocol}://${host}:5173${placeParam}`;
     }
 
-    // 生产环境
-    return `https://dinnerparty.cc${placeParam}`;
+    // 生产环境：使用请求的实际域名
+    return `${protocol}://${host}${placeParam}`;
 }
 
 function buildAmapNavUrl(place) {
