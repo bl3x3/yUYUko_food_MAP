@@ -555,22 +555,26 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 }
                 const cw = container ? container.clientWidth : window.innerWidth;
                 const ch = container ? container.clientHeight : window.innerHeight;
-                const margin = 60; // small buffer to hide labels just outside viewport
+                const pad = 10;
+                const maxHalfW = 100; // estimate: max label half-width in px
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
                     // Only show labels for non-clustered individual markers
                     if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
-                    if (point && point.x > -margin && point.x < cw + margin && point.y > -margin && point.y < ch + margin) {
-                        labels.push({
-                            x: point.x,
-                            y: point.y,
-                            name: p.name,
-                            category: p.category || '',
-                            id: p.id
-                        });
-                    }
+                    if (!point) continue;
+                    if (point.x < -60 || point.x > cw + 60 || point.y < -60 || point.y > ch + 60) continue;
+                    // Clamp x so label text stays within viewport edges
+                    const halfW = Math.min((p.name || '').length * 7 + 12, maxHalfW);
+                    const x = Math.max(pad + halfW, Math.min(cw - pad - halfW, point.x));
+                    labels.push({
+                        x: x,
+                        y: point.y,
+                        name: p.name,
+                        category: p.category || '',
+                        id: p.id
+                    });
                 }
                 setMarkerLabels(labels);
             };
