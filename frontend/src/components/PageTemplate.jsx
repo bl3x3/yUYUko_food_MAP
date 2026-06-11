@@ -30,7 +30,7 @@ export default function PageTemplate({ title, onBack, breadcrumb = [], children,
     };
 
     const breadcrumbStyle = { color: dark ? '#9ca3af' : '#6b7280', fontSize: 16, marginBottom: 12 };
-    const cardStyle = { background: dark ? '#0b1220' : '#fff', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
+    const cardStyle = { background: dark ? '#0b1220' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
 
     return (
         <div style={rootStyle}>
@@ -56,7 +56,7 @@ export default function PageTemplate({ title, onBack, breadcrumb = [], children,
                                 </span>
                             );
                         })}
-                        <Button themeAware onClick={onBack || (breadcrumb[0] && breadcrumb[0].onClick)} style={{ padding: '0 8px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(15,23,36)' : '#f6f7f9', color: dark ? '#fff' : undefined, textAlign: 'right', float: 'right' }}>
+                        <Button themeAware onClick={onBack || (breadcrumb[0] && breadcrumb[0].onClick)} style={{ padding: '0 8px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(15,23,36)' : '#f6f7f9', color: dark ? '#fff9f6' : undefined, textAlign: 'right', float: 'right' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: 18, marginRight: 4 }}>arrow_back</span>
                                 <span>返回设置</span>

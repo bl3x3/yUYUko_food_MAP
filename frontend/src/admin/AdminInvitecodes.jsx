@@ -271,7 +271,7 @@ export default function AdminInvitecode({ backendUrl = null }) {
                                         <td>{inv.current_uses != null ? inv.current_uses : (inv.currentUses || 0)}</td>
                                         <td>{inv.created_time || inv.createdTime || "-"}</td>
                                         <td style={{ minWidth: 100 }}>
-                                            <Button themeAware onClick={() => deleteInvite(inv.id)} disabled={processing[inv.id]} style={{ background: '#e02424', color: '#fff', fontSize: 12, padding: '4px 6px' }}>删除</Button>
+                                            <Button themeAware onClick={() => deleteInvite(inv.id)} disabled={processing[inv.id]} style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 6px' }}>删除</Button>
                                         </td>
                                     </tr>
                                 ))}

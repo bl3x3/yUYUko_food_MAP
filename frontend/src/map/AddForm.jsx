@@ -78,7 +78,7 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
                             left: 0,
                             width: '100%',
                             zIndex: 10,
-                            background: dark ? '#1e293b' : '#fff',
+                            background: dark ? '#1e293b' : '#fff9f6',
                             border: `1px solid ${dark ? '#334155' : '#ccc'}`,
                             borderRadius: 4,
                             boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
@@ -119,7 +119,7 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
                                                         whiteSpace: 'nowrap',
                                                         cursor: 'pointer',
                                                         background: isSelected ? themeColor : (dark ? '#334155' : '#f1f5f9'),
-                                                        color: isSelected ? '#fff' : (dark ? '#e2e8f0' : '#333'),
+                                                        color: isSelected ? '#fff9f6' : (dark ? '#e2e8f0' : '#333'),
                                                         border: `1px solid ${isSelected ? themeColor : (dark ? '#475569' : '#cbd5e1')}`,
                                                         flex: '0 0 auto'
                                                     }}
@@ -141,7 +141,7 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
                                 gap: 8,
                                 padding: '8px 10px',
                                 borderTop: `1px solid ${dark ? '#334155' : '#e5e7eb'}`,
-                                background: dark ? '#0f172a' : '#fff'
+                                background: dark ? '#0f172a' : '#fff9f6'
                             }}
                         >
                             <Button themeAware type="button" onClick={saveTagsAndClose} style={{ flex: 1 }}>

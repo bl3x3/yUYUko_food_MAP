@@ -259,7 +259,7 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                                     width: 24,
                                     height: 24,
                                     borderRadius: '50%',
-                                    background: '#fff',
+                                    background: '#fff9f6',
                                     boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
                                     transition: 'left .18s'
                                 }} />
@@ -284,7 +284,7 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                             height: 36,
                             borderRadius: 6,
                             border: dark ? '1px solid #334155' : '1px solid #d1d5db',
-                            background: dark ? '#07101a' : '#fff',
+                            background: dark ? '#07101a' : '#fff9f6',
                             cursor: loading ? 'not-allowed' : 'pointer',
                             padding: 6,
                             boxSizing: 'border-box',
@@ -303,7 +303,7 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                         disabled={loading}
                         style={{
                             background: themeColor,
-                            color: '#fff',
+                            color: '#fff9f6',
                             border: 'none',
                             padding: '8px 12px',
                             borderRadius: 6,
@@ -329,7 +329,7 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                                 height: 36,
                                 borderRadius: 6,
                                 border: dark ? '1px solid #334155' : '1px solid #d1d5db',
-                                background: dark ? '#07101a' : '#fff',
+                                background: dark ? '#07101a' : '#fff9f6',
                                 cursor: loading ? 'not-allowed' : 'pointer',
                                 padding: 6,
                                 boxSizing: 'border-box',

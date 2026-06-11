@@ -56,7 +56,7 @@ function cardStyle(dark) {
     return {
         borderRadius: 8,
         border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}`,
-        background: dark ? '#0b1220' : '#ffffff',
+        background: dark ? '#0b1220' : '#fff9f6',
         padding: 20
     };
 }
@@ -123,7 +123,7 @@ export function DinnerListPage({ backendUrl, onGoCreate, onOpenDetail, onGoHome 
                 <div style={cardStyle(dark)}>
                     <p style={{ marginTop: 0, color: dark ? '#9fb3c8' : '#486581' }}>支持发起、访问、分享的活动页，方便直接约人。</p>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                        <Button onClick={onGoCreate} style={{ color: '#fff', border: 0 }}>发起聚餐</Button>
+                        <Button onClick={onGoCreate} style={{ color: '#fff9f6', border: 0 }}>发起聚餐</Button>
                     </div>
 
                     {loading && <div>正在加载活动...</div>}
@@ -138,7 +138,7 @@ export function DinnerListPage({ backendUrl, onGoCreate, onOpenDetail, onGoHome 
                                 <div key={item.id} style={{ border: dark ? '1px solid #334155' : '1px solid #d9e2ec', borderRadius: 12, padding: 14 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                         <strong style={{ fontSize: 18 }}>{item.title}</strong>
-                                        <Button onClick={() => onOpenDetail(item.id)} style={{ padding: '6px 12px', color: '#fff', border: 0 }}>查看详情</Button>
+                                        <Button onClick={() => onOpenDetail(item.id)} style={{ padding: '6px 12px', color: '#fff9f6', border: 0 }}>查看详情</Button>
                                     </div>
                                     <div style={{ marginTop: 8, color: dark ? '#a5b4c5' : '#486581' }}>
                                         {formatDateTime(item.start_time)} · {item.place_name}
@@ -259,7 +259,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                             <Tooltip text="从地图选择地点" placement="top">
                                 <Button
                                     onClick={() => setPickerOpen(true)}
-                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff', border: 0 }}
+                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff9f6', border: 0 }}
                                     aria-label="从地图选择地点"
                                     type="button"
                                 >
@@ -282,7 +282,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                                     onClick={openDatePicker}
                                     type="button"
                                     aria-label="选择日期时间"
-                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff', border: 0 }}
+                                    style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', color: '#fff9f6', border: 0 }}
                                 >
                                     <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 24 }}>calendar_month</span>
                                 </Button>
@@ -299,7 +299,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                             style={{
                                 borderRadius: 12,
                                 border: dark ? '1px solid #334155' : '1px solid #bcccdc',
-                                background: dark ? '#0b1220' : '#fff',
+                                background: dark ? '#0b1220' : '#fff9f6',
                                 color: dark ? '#e5e7eb' : '#102a43',
                                 padding: 12
                             }}
@@ -308,7 +308,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                         {!!error && <div style={{ color: '#ef4444' }}>{error}</div>}
 
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <Button type="submit" disabled={submitting} style={{ color: '#fff', border: 0 }}>{submitting ? '正在创建...' : '创建聚餐活动'}</Button>
+                            <Button type="submit" disabled={submitting} style={{ color: '#fff9f6', border: 0 }}>{submitting ? '正在创建...' : '创建聚餐活动'}</Button>
                         </div>
                     </form>
                 </div>
@@ -428,12 +428,12 @@ export function DinnerDetailPage({ backendUrl, dinnerId, token, currentUserId, i
                                 <div style={{ wordBreak: 'break-all', color: dark ? '#cbd5e1' : '#243b53' }}>{shareUrl}</div>
                                 <div style={{ marginTop: 6, fontSize: 13, color: dark ? '#9fb3c8' : '#486581' }}>可在支持预览的平台展示聚餐活动卡片，而非普通地点页。</div>
                                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                                    <Button onClick={copyLink} style={{ color: '#fff', border: 0 }}>复制分享链接</Button>
+                                    <Button onClick={copyLink} style={{ color: '#fff9f6', border: 0 }}>复制分享链接</Button>
                                     <a href={shareUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                                        <Button style={{ color: '#fff', border: 0 }}>打开分享页</Button>
+                                        <Button style={{ color: '#fff9f6', border: 0 }}>打开分享页</Button>
                                     </a>
                                     {canDelete && (
-                                        <Button onClick={handleDelete} disabled={deleting} style={{ background: '#dc2626', color: '#fff', border: 0 }}>
+                                        <Button onClick={handleDelete} disabled={deleting} style={{ background: '#dc2626', color: '#fff9f6', border: 0 }}>
                                             {deleting ? '删除中...' : '删除此次聚餐'}
                                         </Button>
                                     )}
@@ -447,8 +447,8 @@ export function DinnerDetailPage({ backendUrl, dinnerId, token, currentUserId, i
                             </div>
 
                             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-                                <Button onClick={onBackList} style={{ color: '#fff', border: 0 }}>返回活动列表</Button>
-                                <Button onClick={onGoHome} style={{ color: '#fff', border: 0 }}>返回地图</Button>
+                                <Button onClick={onBackList} style={{ color: '#fff9f6', border: 0 }}>返回活动列表</Button>
+                                <Button onClick={onGoHome} style={{ color: '#fff9f6', border: 0 }}>返回地图</Button>
                             </div>
                         </>
                     )}

@@ -26,7 +26,7 @@ const SelectInput = forwardRef(({ style = {}, className, children, ...rest }, re
         boxSizing: 'border-box',
         borderRadius: 22,
         border: dark ? '2px solid rgba(255,255,255,0.06)' : `2px solid ${themeColor}`,
-        background: dark ? '#0b1220' : '#fff',
+        background: dark ? '#0b1220' : '#fff9f6',
         color: dark ? '#e5e7eb' : undefined,
         outline: 'none',
         boxShadow: `0 4px 12px ${hexToRgba(themeColor, 0.2)}, 0 0 8px ${hexToRgba(themeColor, 0.25)}`

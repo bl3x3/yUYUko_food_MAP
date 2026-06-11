@@ -355,7 +355,7 @@ export default function AdminUsers({ backendUrl = null }) {
                                                     onClick={() => onBanClick(u)}
                                                     disabled={isSelf || isSuper || processing[u.id]}
                                                     title={isSuper ? '超级管理员不可操作' : (isSelf ? '不可操作自己' : '')}
-                                                    style={{ background: '#a04400', color: '#fff', fontSize: 12, padding: '4px 8px', whiteSpace: 'nowrap', minWidth: 60 }}
+                                                    style={{ background: '#a04400', color: '#fff9f6', fontSize: 12, padding: '4px 8px', whiteSpace: 'nowrap', minWidth: 60 }}
                                                 >
                                                     封禁
                                                 </Button>
@@ -365,7 +365,7 @@ export default function AdminUsers({ backendUrl = null }) {
                                                 onClick={() => deleteUser(u.id)}
                                                 disabled={isSelf || isSuper || processing[u.id]}
                                                 title={isSuper ? '超级管理员不可操作' : (isSelf ? '不可操作自己' : '')}
-                                                style={{ background: '#e02424', color: '#ffffff', fontSize: 12, padding: '4px 8px', whiteSpace: 'nowrap', minWidth: 60 }}
+                                                style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 8px', whiteSpace: 'nowrap', minWidth: 60 }}
                                             >
                                                 删除
                                             </Button>

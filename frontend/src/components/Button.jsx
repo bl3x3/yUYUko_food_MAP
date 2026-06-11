@@ -14,7 +14,7 @@ export default function Button({ children, onClick, disabled, style, title, vari
         padding: '6px 10px',
         borderRadius: 4,
         border: '1px solid #ccc',
-        background: '#fff',
+        background: '#fff9f6',
         cursor: 'pointer',
         fontSize: 14,
         textAlign: 'center',

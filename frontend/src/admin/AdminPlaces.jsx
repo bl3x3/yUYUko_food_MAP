@@ -237,7 +237,7 @@ export default function AdminPlaces({ backendUrl = null }) {
                                                     <td style={{ minWidth: 140 }}>
                                                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                                             <Button themeAware onClick={() => review(r.id, 'approve')} disabled={processing[r.id]} style={{ fontSize: 12, padding: '4px 6px' }}>通过</Button>
-                                                            <Button themeAware onClick={() => review(r.id, 'reject')} disabled={processing[r.id]} style={{ background: '#e02424', color: '#fff', fontSize: 12, padding: '4px 6px' }}>驳回</Button>
+                                                            <Button themeAware onClick={() => review(r.id, 'reject')} disabled={processing[r.id]} style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 6px' }}>驳回</Button>
                                                         </div>
                                                     </td>
                                                 </tr>

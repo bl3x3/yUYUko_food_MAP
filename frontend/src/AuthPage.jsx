@@ -11,7 +11,7 @@ const MAX_PASSWORD_LENGTH = 128;
 const MAX_INVITE_CODE_LENGTH = 64;
 
 const STATIC_COLORS = {
-    panelBackground: "#ffffff",
+    panelBackground: "#fff9f6",
     textStrong: "#1f2328",
     textMuted: "#57606a",
     border: "#d0d7de",

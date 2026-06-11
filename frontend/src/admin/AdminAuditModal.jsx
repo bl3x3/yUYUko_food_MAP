@@ -58,7 +58,7 @@ export default function AdminAuditModal({ open, onClose, backendUrl, token }) {
     return (
         <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 6000 }}>
             <ScrollableView style={{
-                background: dark ? '#0b1220' : '#fff',
+                background: dark ? '#0b1220' : '#fff9f6',
                 padding: 12,
                 boxSizing: 'border-box',
                 borderRadius: 6,

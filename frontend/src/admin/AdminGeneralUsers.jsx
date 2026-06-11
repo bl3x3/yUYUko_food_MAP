@@ -153,7 +153,7 @@ export default function AdminGeneralUsers({ backendUrl = null }) {
                         placeholder="搜索用户名称、id、qq号"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        style={{ padding: '6px 12px', width: '100%', boxSizing: 'border-box', border: dark ? '1px solid #334155' : '1px solid #d1d5db', background: dark ? '#07101a' : '#fff', color: dark ? '#e5e7eb' : 'inherit', borderRadius: 6 }}
+                        style={{ padding: '6px 12px', width: '100%', boxSizing: 'border-box', border: dark ? '1px solid #334155' : '1px solid #d1d5db', background: dark ? '#07101a' : '#fff9f6', color: dark ? '#e5e7eb' : 'inherit', borderRadius: 6 }}
                     />
                 </div>
                 <Button themeAware onClick={fetchUsers} disabled={loading}>刷新</Button>
@@ -191,7 +191,7 @@ export default function AdminGeneralUsers({ backendUrl = null }) {
                                             )}
                                         </td>
                                         <td style={{ minWidth: 100 }}>
-                                            <Button themeAware onClick={() => deleteUser(u.id)} disabled={processing[u.id]} style={{ background: '#e02424', color: '#ffffff', fontSize: 12, padding: '4px 6px' }}>删除</Button>
+                                            <Button themeAware onClick={() => deleteUser(u.id)} disabled={processing[u.id]} style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 6px' }}>删除</Button>
                                         </td>
                                     </tr>
                                 ))}

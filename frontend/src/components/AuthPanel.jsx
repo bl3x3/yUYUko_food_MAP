@@ -220,7 +220,7 @@ const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogou
                         left: 12,
                         top: 64,
                         minWidth: 200,
-                        background: dark ? '#0b1220' : '#fff',
+                        background: dark ? '#0b1220' : '#fff9f6',
                         borderRadius: 8,
                         boxShadow: dark ? '0 6px 24px rgba(0,0,0,0.6)' : '0 6px 24px rgba(0,0,0,0.15)',
                         padding: 12,

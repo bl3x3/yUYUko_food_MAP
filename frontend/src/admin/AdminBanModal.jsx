@@ -28,7 +28,7 @@ export default function AdminBanModal({ open, onClose, onConfirm, targetUser }) 
 
     return (
         <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 7000 }}>
-            <div style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 420, maxWidth: '95%', boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
+            <div style={{ background: '#fff9f6', padding: 12, borderRadius: 6, minWidth: 420, maxWidth: '95%', boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ margin: 0 }}>封禁用户 {targetUser ? targetUser.username : ''}</h3>
                     <div>
@@ -49,12 +49,12 @@ export default function AdminBanModal({ open, onClose, onConfirm, targetUser }) 
 
                     <div>
                         <label style={{ display: 'block', marginBottom: 6, color: dark ? '#9ca3af' : '#666' }}>封禁原因（可选）</label>
-                        <TextArea value={reason} onChange={e => setReason(e.target.value)} placeholder="请输入封禁原因" style={{ width: '96%', minHeight: 80, padding: 8, border: dark ? '1px solid #334155' : '1px solid #d1d5db', background: dark ? '#0b1220' : '#fff', color: dark ? '#e5e7eb' : 'inherit' }} />
+                        <TextArea value={reason} onChange={e => setReason(e.target.value)} placeholder="请输入封禁原因" style={{ width: '96%', minHeight: 80, padding: 8, border: dark ? '1px solid #334155' : '1px solid #d1d5db', background: dark ? '#0b1220' : '#fff9f6', color: dark ? '#e5e7eb' : 'inherit' }} />
                     </div>
 
                     <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <Button themeAware onClick={onClose} style={{ background: '#fff', border: '1px solid #e5e7eb' }}>取消</Button>
-                        <Button themeAware onClick={handleConfirm} style={{ background: '#a04400', color: '#fff' }}>确认封禁</Button>
+                        <Button themeAware onClick={onClose} style={{ background: '#fff9f6', border: '1px solid #e5e7eb' }}>取消</Button>
+                        <Button themeAware onClick={handleConfirm} style={{ background: '#a04400', color: '#fff9f6' }}>确认封禁</Button>
                     </div>
                 </div>
             </div>

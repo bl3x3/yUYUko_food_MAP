@@ -247,7 +247,7 @@ export default function AdminQQWhitelist({ backendUrl = null }) {
                             padding: '8px 10px',
                             borderRadius: 8,
                             border: dark ? '1px solid #1f2937' : '1px solid #ccc',
-                            background: dark ? '#0b1220' : '#fff',
+                            background: dark ? '#0b1220' : '#fff9f6',
                             color: dark ? '#e5e7eb' : 'inherit',
                             resize: 'vertical',
                             fontSize: 14
@@ -286,7 +286,7 @@ export default function AdminQQWhitelist({ backendUrl = null }) {
                                                 themeAware
                                                 onClick={() => deleteEntry(entry.id)}
                                                 disabled={processing[entry.id]}
-                                                style={{ background: '#e02424', color: '#fff', fontSize: 12, padding: '4px 6px' }}
+                                                style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 6px' }}
                                             >
                                                 删除
                                             </Button>

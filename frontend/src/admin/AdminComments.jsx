@@ -208,7 +208,7 @@ export default function AdminComments({ backendUrl = null }) {
                                                     </td>
                                                     <td>{c.created_time || c.createdTime || '-'}</td>
                                                     <td style={{ minWidth: 100 }}>
-                                                        <Button themeAware onClick={() => deleteComment(c.id)} disabled={processing[c.id]} style={{ background: '#e02424', color: '#fff', fontSize: 12, padding: '4px 6px' }}>删除</Button>
+                                                        <Button themeAware onClick={() => deleteComment(c.id)} disabled={processing[c.id]} style={{ background: '#e02424', color: '#fff9f6', fontSize: 12, padding: '4px 6px' }}>删除</Button>
                                                     </td>
                                                 </tr>
                                             ))}

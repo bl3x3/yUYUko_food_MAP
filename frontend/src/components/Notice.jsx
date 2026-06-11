@@ -38,11 +38,11 @@ function srgbToLinear(v) {
 
 function pickContrastTextColor(bgColor) {
     const rgb = parseColorToRgb(bgColor);
-    if (!rgb) return '#111827';
+    if (!rgb) return '#592943';
     const luminance = 0.2126 * srgbToLinear(rgb.r) + 0.7152 * srgbToLinear(rgb.g) + 0.0722 * srgbToLinear(rgb.b);
     const contrastWithBlack = (luminance + 0.05) / 0.05;
     const contrastWithWhite = 1.05 / (luminance + 0.05);
-    return contrastWithBlack >= contrastWithWhite ? '#111827' : '#ffffff';
+    return contrastWithBlack >= contrastWithWhite ? '#592943' : '#fff9f6';
 }
 
 function pickBorderColor(bgColor) {

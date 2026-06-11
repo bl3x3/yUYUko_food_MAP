@@ -227,7 +227,7 @@ export default function AdminNotices({ backendUrl = null }) {
                 <div style={{ marginBottom: 16, color: dark ? '#9ca3af' : '#666' }}>当前没有生效的公告。</div>
             )}
 
-            <div style={{ marginBottom: 12, padding: 12, border: dark ? '1px solid #1f2937' : '1px solid #e5e7eb', borderRadius: 8, background: dark ? '#0b1220' : '#fff' }}>
+            <div style={{ marginBottom: 12, padding: 12, border: dark ? '1px solid #1f2937' : '1px solid #e5e7eb', borderRadius: 8, background: dark ? '#0b1220' : '#fff9f6' }}>
                 <div style={{ marginBottom: 10, fontWeight: 700 }}>发布新公告</div>
                 <div style={{ display: 'grid', gap: 10 }}>
                     <TextInput

@@ -35,8 +35,8 @@ export default function AdminDashboard({ user, token, backendUrl, onBackHome, on
     const rootStyle = { minHeight: "var(--app-height, 100vh)", background: dark ? '#0f1724' : '#f6f7f9', padding: 20, boxSizing: "border-box", color: dark ? '#e5e7eb' : 'inherit' };
     const containerStyle = { maxWidth: 960, margin: "0 auto" };
     const headerRow = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 };
-    const cardStyle = { background: dark ? '#0b1220' : '#fff', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
-    const panelStyle = { marginTop: 18, background: dark ? '#0b1220' : '#fff', padding: 12, borderRadius: 8, border: `1px solid ${dark ? '#1f2937' : 'transparent'}` };
+    const cardStyle = { background: dark ? '#0b1220' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
+    const panelStyle = { marginTop: 18, background: dark ? '#0b1220' : '#fff9f6', padding: 12, borderRadius: 8, border: `1px solid ${dark ? '#1f2937' : 'transparent'}` };
 
     return (
         <div style={rootStyle}>

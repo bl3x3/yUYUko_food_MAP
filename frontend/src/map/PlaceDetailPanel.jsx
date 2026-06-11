@@ -17,7 +17,7 @@ export default function PlaceDetailPanel({ place, onClose }) {
         <>
             <div style={{
                 position: 'absolute', top: 120, right: 30, width: 350, bottom: 220,
-                background: dark ? '#0f172a' : '#fff', color: dark ? '#f8fafc' : '#333',
+                background: dark ? '#0f172a' : '#fff9f6', color: dark ? '#f8fafc' : '#333',
                 borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
                 display: 'flex', flexDirection: 'column', zIndex: 5000
             }}>
@@ -110,7 +110,7 @@ export default function PlaceDetailPanel({ place, onClose }) {
                             borderRadius: 999,
                             border: 'none',
                             background: 'rgba(255, 255, 255, 0.14)',
-                            color: '#fff',
+                            color: '#fff9f6',
                             fontSize: 26,
                             lineHeight: '40px',
                             cursor: 'pointer',

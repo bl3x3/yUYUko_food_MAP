@@ -16,7 +16,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
     const container = { maxWidth: 960, margin: '0 auto' };
     const titleRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 };
     const captionStyle = { marginBottom: 14, color: dark ? '#9ca3af' : '#666', fontSize: 16 };
-    const cardStyle = { background: dark ? '#0b1220' : '#fff', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
+    const cardStyle = { background: dark ? '#0b1220' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
     const sepBg = dark ? '#1f2937' : '#a2a2a2';
 
     const handleDeleteAccount = async () => {
@@ -68,7 +68,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         </div>
                         <div>
                             <Tooltip text="修改头像" placement="top">
-                                <Button themeAware onClick={onOpenEditAvatar} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#ffffff', color: dark ? '#fff' : undefined }}>
+                                <Button themeAware onClick={onOpenEditAvatar} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#fff9f6', color: dark ? '#fff9f6' : undefined }}>
                                     <span className="material-symbols-outlined">chevron_right</span>
                                 </Button>
                             </Tooltip>
@@ -81,7 +81,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         <div><strong>当前用户名：</strong>{user ? user.username : '-'}</div>
                         <div>
                             <Tooltip text="修改用户名" placement="top">
-                                <Button themeAware onClick={onOpenEditUsername} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#ffffff', color: dark ? '#fff' : undefined }}>
+                                <Button themeAware onClick={onOpenEditUsername} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#fff9f6', color: dark ? '#fff9f6' : undefined }}>
                                     <span className="material-symbols-outlined">chevron_right</span>
                                 </Button>
                             </Tooltip>
@@ -94,7 +94,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         <div><strong>修改密码</strong></div>
                         <div>
                             <Tooltip text="修改密码" placement="top">
-                                <Button themeAware onClick={onOpenEditPassword} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#ffffff', color: dark ? '#fff' : undefined }}>
+                                <Button themeAware onClick={onOpenEditPassword} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#fff9f6', color: dark ? '#fff9f6' : undefined }}>
                                     <span className="material-symbols-outlined">chevron_right</span>
                                 </Button>
                             </Tooltip>
@@ -107,7 +107,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         <div><strong>个性化主题</strong></div>
                         <div>
                             <Tooltip text="个性化主题" placement="top">
-                                <Button themeAware onClick={onOpenThemes} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#ffffff', color: dark ? '#fff' : undefined }}>
+                                <Button themeAware onClick={onOpenThemes} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#fff9f6', color: dark ? '#fff9f6' : undefined }}>
                                     <span className="material-symbols-outlined">chevron_right</span>
                                 </Button>
                             </Tooltip>
@@ -120,7 +120,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         <div><strong>个性化地图</strong></div>
                         <div>
                             <Tooltip text="个性化地图" placement="top">
-                                <Button themeAware onClick={onOpenPersonalize} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#ffffff', color: dark ? '#fff' : undefined }}>
+                                <Button themeAware onClick={onOpenPersonalize} style={{ padding: '8px 12px', border: 0, alignItems: 'center', display: 'inline-flex', gap: 4, background: dark ? 'rgb(11,18,32)' : '#fff9f6', color: dark ? '#fff9f6' : undefined }}>
                                     <span className="material-symbols-outlined">chevron_right</span>
                                 </Button>
                             </Tooltip>
@@ -135,7 +135,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
                         </div>
                         <div>
                             <Tooltip text="删除账户（不可恢复）" placement="top">
-                                <Button themeAware onClick={handleDeleteAccount} style={{ padding: '8px 12px', border: 0, background: '#dc2626', color: '#fff' }} disabled={deleting}>
+                                <Button themeAware onClick={handleDeleteAccount} style={{ padding: '8px 12px', border: 0, background: '#dc2626', color: '#fff9f6' }} disabled={deleting}>
                                     {deleting ? '删除中...' : '删除账户'}
                                 </Button>
                             </Tooltip>

@@ -93,11 +93,11 @@ export function srgbToLinear(v) {
 
 export function pickContrastTextColor(bgColor) {
     const rgb = parseColorToRgb(bgColor);
-    if (!rgb) return '#111827';
+    if (!rgb) return '#592943';
     const luminance = 0.2126 * srgbToLinear(rgb.r) + 0.7152 * srgbToLinear(rgb.g) + 0.0722 * srgbToLinear(rgb.b);
     const contrastWithBlack = (luminance + 0.05) / 0.05;
     const contrastWithWhite = 1.05 / (luminance + 0.05);
-    return contrastWithBlack >= contrastWithWhite ? '#111827' : '#ffffff';
+    return contrastWithBlack >= contrastWithWhite ? '#592943' : '#fff9f6';
 }
 
 // Resolve the effective primary color: user overrides or dark/light default
@@ -152,6 +152,12 @@ export function applyThemeSecondary(color) {
 export function applyThemeColors(primary, secondary) {
     applyThemeColor(primary);
     applyThemeSecondary(secondary);
+    // Set icon color: in light mode use dark primary, in dark mode keep light
+    try {
+        const root = document.documentElement;
+        const iconColor = isDarkMode() ? (secondary || DEFAULT_DARK_SECONDARY) : DEFAULT_DARK_PRIMARY;
+        root.style.setProperty('--theme-icon', iconColor);
+    } catch (e) { /* ignore */ }
     try {
         if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
             window.dispatchEvent(new CustomEvent('themechange', {

@@ -546,7 +546,7 @@ export default function MapUI(props) {
                             padding: '6px 34px 6px 12px',
                             borderRadius: 22,
                             border: dark ? '2px solid rgba(255,255,255,0.06)' : `2px solid ${customThemeColor}`,
-                            background: dark ? '#0b1220' : '#fff',
+                            background: dark ? '#0b1220' : '#fff9f6',
                             color: dark ? '#e5e7eb' : 'inherit',
                             outline: 'none',
                             boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}, 0 0 8px ${hexToRgba(customThemeColor, 0.25)}`,
@@ -592,7 +592,7 @@ export default function MapUI(props) {
                             right: 0,
                             width: '100%',
                             maxHeight: '60vh',
-                            background: dark ? '#0b1220' : '#fff',
+                            background: dark ? '#0b1220' : '#fff9f6',
                             borderRadius: 8,
                             boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                             border: dark ? '1px solid rgba(255,255,255,0.06)' : `1px solid ${hexToRgba(customThemeColor, 0.5)}`,
@@ -634,7 +634,7 @@ export default function MapUI(props) {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     background: customThemeColor,
-                                    color: '#fff',
+                                    color: '#fff9f6',
                                     border: 'none',
                                     boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                     transition: 'background 180ms ease, transform 220ms ease',
@@ -670,7 +670,7 @@ export default function MapUI(props) {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         background: customThemeColor,
-                                        color: '#fff',
+                                        color: '#fff9f6',
                                         border: 'none',
                                         boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                         transition: 'background 180ms ease, transform 220ms ease',
@@ -705,7 +705,7 @@ export default function MapUI(props) {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         background: customThemeColor,
-                                        color: '#fff',
+                                        color: '#fff9f6',
                                         border: 'none',
                                         boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                         transition: 'background 180ms ease, transform 220ms ease',
@@ -726,7 +726,7 @@ export default function MapUI(props) {
             {!hideNonSearchButtons && (
                 <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
-                        <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
+                        <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff9f6", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
                             v1.7.1
                         </div>
 
@@ -747,7 +747,7 @@ export default function MapUI(props) {
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 background: addMode ? '#e02424' : customThemeColor,
-                                                color: '#fff',
+                                                color: '#fff9f6',
                                                 border: 'none',
                                                 boxShadow: addMode ? '0 4px 12px rgba(224,36,36,0.2)' : '0 4px 12px rgba(0,47,167,0.2)',
                                                 transition: 'background 180ms ease, transform 220ms ease',
@@ -777,7 +777,7 @@ export default function MapUI(props) {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         background: favPageOpen ? '#f5220b' : customThemeColor,
-                                        color: '#fff',
+                                        color: '#fff9f6',
                                         border: 'none',
                                         transition: 'background 180ms ease, transform 220ms ease',
                                         cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
@@ -805,7 +805,7 @@ export default function MapUI(props) {
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             background: locating ? '#089938' : customThemeColor,
-                                            color: '#fff',
+                                            color: '#fff9f6',
                                             border: 'none',
                                             transition: 'background 180ms ease, transform 220ms ease',
                                             cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
@@ -836,7 +836,7 @@ export default function MapUI(props) {
                         pointerEvents: "auto"
                     }}
                 >
-                    <div ref={popupRef} style={{ background: dark ? '#0b1220' : '#fff', padding: 10, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.25)", minWidth: 200, width: 'min(92vw, 320px)', maxWidth: 'min(92vw, 320px)' }}>
+                    <div ref={popupRef} style={{ background: dark ? '#0b1220' : '#fff9f6', padding: 10, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.25)", minWidth: 200, width: 'min(92vw, 320px)', maxWidth: 'min(92vw, 320px)' }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <strong style={{ fontSize: 14, color: dark ? '#e5e7eb' : undefined }}>{selectedPlace.name}</strong>
                             {!hideNonSearchButtons && (
@@ -873,7 +873,7 @@ export default function MapUI(props) {
                         {pickerMode ? (
                             <div style={{ marginTop: 10, textAlign: 'right' }}>
                                 {!hideNonSearchButtons && (
-                                    <Button onClick={handlePickPlace} style={{ color: '#fff', border: 0 }}>选择此地点</Button>
+                                    <Button onClick={handlePickPlace} style={{ color: '#fff9f6', border: 0 }}>选择此地点</Button>
                                 )}
                             </div>
                         ) : (
@@ -966,7 +966,7 @@ export default function MapUI(props) {
                 }}>
                     <div style={{
                         width: 'min(420px, 92vw)',
-                        background: dark ? '#0b1220' : '#fff',
+                        background: dark ? '#0b1220' : '#fff9f6',
                         borderRadius: 10,
                         boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.24)',
                         border: dark ? '1px solid #334155' : '1px solid #e5e7eb',
@@ -1019,7 +1019,7 @@ export default function MapUI(props) {
                 >
                     <div style={{
                         width: 'min(420px, 92vw)',
-                        background: dark ? '#0b1220' : '#fff',
+                        background: dark ? '#0b1220' : '#fff9f6',
                         borderRadius: 10,
                         boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.24)',
                         border: dark ? '1px solid #334155' : '1px solid #e5e7eb',
@@ -1101,7 +1101,7 @@ export default function MapUI(props) {
             {!hideNonSearchButtons && !pickerMode && addingPos && (
                 <div style={{
                     position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
-                    background: dark ? '#0b1220' : '#fff', padding: 12, zIndex: 3000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.3)"
+                    background: dark ? '#0b1220' : '#fff9f6', padding: 12, zIndex: 3000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.3)"
                 }}>
                     <h4 style={{ margin: '0 0 12px 0', color: dark ? '#e5e7eb' : 'inherit' }}>添加地点</h4>
                     <AddForm backendUrl={backendUrl} token={token} defaultPos={addingPos} onCancel={onAddCancel} onSubmit={onAddSubmit} defaultName={addingPrefill?.name} defaultCategory={addingPrefill?.category} defaultDescription={addingPrefill?.description} />
@@ -1116,7 +1116,7 @@ export default function MapUI(props) {
                 <div style={{
                     position: 'absolute', right: 60, top: 8,
                     width: 300, maxHeight: '60vh',
-                    background: dark ? '#0f172a' : '#fff',
+                    background: dark ? '#0f172a' : '#fff9f6',
                     color: dark ? '#f8fafc' : '#333',
                     borderRadius: 8,
                     boxShadow: dark ? '0 4px 24px rgba(0,0,0,0.6)' : '0 4px 24px rgba(0,0,0,0.2)',

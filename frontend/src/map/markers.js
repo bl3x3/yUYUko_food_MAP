@@ -39,7 +39,7 @@ function buildMarkerContent(placeName, category) {
     const iconSrc = isThunder ? noIcon : yesIcon;
     const dark = isDarkMode();
     const labelBg = dark ? 'rgba(255,255,255,0.92)' : 'rgba(100,100,100,0.88)';
-    const labelColor = dark ? '#111827' : '#ffffff';
+    const labelColor = dark ? '#111827' : '#fff9f6';
     const labelBorder = dark ? '3px solid rgba(0,0,0,0.15)' : '2px solid rgba(255,255,255,0.3)';
     const labelShadow = dark ? '0 1px 4px rgba(0,0,0,0.25)' : '0 1px 3px rgba(0,0,0,0.3)';
     return `
@@ -54,7 +54,7 @@ function buildClusterContent(count) {
     return `
         <div style="position:relative;width:36px;height:52px;overflow:visible;">
             <img src="${unionIcon}" style="display:block;width:36px;height:52px;" draggable="false" />
-            <div style="position:absolute;left:54%;top:30%;transform:translate(-50%, -50%);font-weight:600;font-size:20px;color: #111827;text-shadow:0 0 3px #ffffff,0 0 3px #ffffff,0 0 3px #ffffff;pointer-events:none;line-height:1;">${count}</div>
+            <div style="position:absolute;left:54%;top:30%;transform:translate(-50%, -50%);font-weight:600;font-size:20px;color: #111827;text-shadow:0 0 3px #fff9f6,0 0 3px #fff9f6,0 0 3px #fff9f6;pointer-events:none;line-height:1;">${count}</div>
         </div>
     `;
 }

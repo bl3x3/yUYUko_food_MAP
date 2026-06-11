@@ -16,7 +16,7 @@ export default function Tooltip({ text, children, placement = 'bottom' }) {
         bottom: placement === 'top' ? 'calc(100% + 6px)' : 'auto',
         right: 0,
         background: dark ? '#374151' : 'rgba(0,0,0,0.75)',
-        color: dark ? '#e5e7eb' : '#fff',
+        color: dark ? '#e5e7eb' : '#fff9f6',
         padding: '6px 8px',
         borderRadius: 4,
         fontSize: 12,

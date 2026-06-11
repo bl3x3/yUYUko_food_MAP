@@ -67,7 +67,7 @@ export default function ManagePanel({
     return (
         <div style={{
             position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
-            background: dark ? '#0b1220' : '#fff', padding: 12, zIndex: 5000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 4px 18px rgba(0,0,0,0.35)",
+            background: dark ? '#0b1220' : '#fff9f6', padding: 12, zIndex: 5000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 4px 18px rgba(0,0,0,0.35)",
             minWidth: 360, maxWidth: "90%"
         }}>
             <h4 style={{ margin: 0, color: dark ? '#e5e7eb' : 'inherit' }}>管理地点 — {selectedPlace.name}</h4>
@@ -94,7 +94,7 @@ export default function ManagePanel({
                                     left: 0,
                                     width: '100%',
                                     zIndex: 10,
-                                    background: dark ? '#1e293b' : '#fff',
+                                    background: dark ? '#1e293b' : '#fff9f6',
                                     border: `1px solid ${dark ? '#334155' : '#ccc'}`,
                                     borderRadius: 4,
                                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
@@ -135,7 +135,7 @@ export default function ManagePanel({
                                                                 whiteSpace: 'nowrap',
                                                                 cursor: 'pointer',
                                                                 background: getTagBackground(group.group, isSelected),
-                                                                color: isSelected ? '#fff' : (dark ? '#e2e8f0' : '#333'),
+                                                                color: isSelected ? '#fff9f6' : (dark ? '#e2e8f0' : '#333'),
                                                                 border: `1px solid ${isSelected ? themeColor : (dark ? '#475569' : '#cbd5e1')}`,
                                                                 flex: '0 0 auto'
                                                             }}
@@ -157,7 +157,7 @@ export default function ManagePanel({
                                         gap: 8,
                                         padding: '8px 10px',
                                         borderTop: `1px solid ${dark ? '#334155' : '#e5e7eb'}`,
-                                        background: dark ? '#0f172a' : '#fff'
+                                        background: dark ? '#0f172a' : '#fff9f6'
                                     }}
                                 >
                                     <Button themeAware type="button" onClick={saveTagsAndClose} style={{ flex: 1 }}>
@@ -186,7 +186,7 @@ export default function ManagePanel({
                         {canDirectManage() ? (
                             <>
                                 <Button themeAware onClick={onSave} disabled={manageSubmitting} style={{ marginRight: 8 }}>保存</Button>
-                                <Button themeAware onClick={onDelete} disabled={manageSubmitting} style={{ background: "#e02424", color: "#fff" }}>删除</Button>
+                                <Button themeAware onClick={onDelete} disabled={manageSubmitting} style={{ background: "#e02424", color: "#fff9f6" }}>删除</Button>
                             </>
                         ) : (
                             <Button themeAware onClick={onSubmitRequest} disabled={manageSubmitting}>提交申请</Button>
