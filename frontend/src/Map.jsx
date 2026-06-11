@@ -548,17 +548,21 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             handleUpdateLabels = () => {
                 const currentPlaces = placesRef.current;
                 const visibleIds = visibleIndividualIdsRef.current;
+                const container = containerRef.current;
                 if (!currentPlaces || currentPlaces.length === 0) {
                     setMarkerLabels([]);
                     return;
                 }
+                const cw = container ? container.clientWidth : window.innerWidth;
+                const ch = container ? container.clientHeight : window.innerHeight;
+                const margin = 60; // small buffer to hide labels just outside viewport
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
                     // Only show labels for non-clustered individual markers
                     if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
-                    if (point) {
+                    if (point && point.x > -margin && point.x < cw + margin && point.y > -margin && point.y < ch + margin) {
                         labels.push({
                             x: point.x,
                             y: point.y,
