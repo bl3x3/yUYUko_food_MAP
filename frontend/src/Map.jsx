@@ -555,8 +555,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 }
                 const cw = container ? container.clientWidth : window.innerWidth;
                 const ch = container ? container.clientHeight : window.innerHeight;
-                const pad = 10;
                 const maxHalfW = 100; // estimate: max label half-width in px
+                const labelH = 20;   // estimate: label height in px
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
@@ -564,10 +564,13 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
                     if (!point) continue;
-                    if (point.x < -60 || point.x > cw + 60 || point.y < -60 || point.y > ch + 60) continue;
-                    // Clamp x so label text stays within viewport edges
+                    // Skip if marker is outside viewport
+                    if (point.x < -60 || point.x > cw + 60) continue;
+                    // Skip if label would be cut off at top or bottom
+                    if (point.y < 0 || point.y > ch - labelH) continue;
+                    // Clamp x so label text hugs the viewport edge
                     const halfW = Math.min((p.name || '').length * 7 + 12, maxHalfW);
-                    const x = Math.max(pad + halfW, Math.min(cw - pad - halfW, point.x));
+                    const x = Math.max(halfW, Math.min(cw - halfW, point.x));
                     labels.push({
                         x: x,
                         y: point.y,
