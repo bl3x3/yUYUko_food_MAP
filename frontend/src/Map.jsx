@@ -155,7 +155,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         }, durationMs);
     };
 
-    const DEFAULT_THEME_COLOR = '#002fa7';
+    const DEFAULT_THEME_COLOR = 'rgb(248, 167, 211)';
     const [customThemeColor, setCustomThemeColor] = useState(DEFAULT_THEME_COLOR);
 
     useEffect(() => {
@@ -1033,6 +1033,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
 
                 setSearchTerm(place.name || '');
                 setSearchResults([place]);
+                setSearchResetKey((v) => v + 1); // 通知 MapUI 关闭搜索建议面板，呈现"已提交"状态
                 armSkipAutoSearch(800);
                 mapRef.current.setCenter([place.longitude, place.latitude]);
                 mapRef.current.setZoom(16);

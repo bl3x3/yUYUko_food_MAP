@@ -248,6 +248,14 @@ export default function MapUI(props) {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
+    // 当外部通过 searchResetKey 信号要求关闭搜索建议面板时（如分享链接跳转），
+    // 收起下拉建议让搜索框呈现"已提交"的外观
+    useEffect(() => {
+        if (searchResetKey > 0) {
+            setSearchResultsVisible(false);
+        }
+    }, [searchResetKey]);
+
     // Detect overlap between search bar and dinner button (wide mode only)
     useLayoutEffect(() => {
         if (isNarrow) return;
