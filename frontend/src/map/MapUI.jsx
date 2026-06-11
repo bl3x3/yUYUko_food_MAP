@@ -156,6 +156,7 @@ export default function MapUI(props) {
         tipText,
         customThemeColor,
         customThemeSecondary,
+        markerLabels,
         authPending,
         handleLocateMe,
         locating,
@@ -497,6 +498,36 @@ export default function MapUI(props) {
     return (
         <>
             <div ref={containerRef} id="map" style={{ width: "100%", height: "100%", position: "relative" }}></div>
+
+            {/* Marker name labels — rendered as overlay above all marker images */}
+            {(markerLabels || []).map((label, idx) => {
+                const isThunder = label.category && String(label.category).includes('避雷');
+                return (
+                    <div
+                        key={label.id || idx}
+                        style={{
+                            position: 'absolute',
+                            left: label.x,
+                            top: label.y + 45,
+                            transform: 'translateX(-50%)',
+                            zIndex: 1500,
+                            pointerEvents: 'none',
+                            background: dark ? 'var(--theme-secondary)' : '#fff9f6',
+                            color: dark ? '#e5e7eb' : '#1f2937',
+                            fontSize: 12,
+                            lineHeight: '16px',
+                            padding: '2px 8px 2px 6px',
+                            borderRadius: 2,
+                            border: '1px solid var(--theme-primary)',
+                            borderLeft: isThunder ? '5px solid #dc2626' : '5px solid var(--theme-primary)',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.15)'
+                        }}
+                    >
+                        {label.name}
+                    </div>
+                );
+            })}
 
             {pickerMode && (
                 <Notice title="正在选择聚餐地点" tone="warning" />

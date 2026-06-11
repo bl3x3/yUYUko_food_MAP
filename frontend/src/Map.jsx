@@ -95,6 +95,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const [fetchingUser, setFetchingUser] = useState(false);
     const [selectedPlace, setSelectedPlace] = useState(null);
     const [popupPoint, setPopupPoint] = useState(null);
+    const [markerLabels, setMarkerLabels] = useState([]);
     const [commentOpen, setCommentOpen] = useState(false);
     const [commentsList, setCommentsList] = useState([]);
     const [commentsLoading, setCommentsLoading] = useState(false);
@@ -132,6 +133,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     useEffect(() => { manageOpenRef.current = manageOpen; }, [manageOpen]);
     useEffect(() => { commentOpenRef.current = commentOpen; }, [commentOpen]);
     const loadPlacesRef = useRef(null);
+    const handleUpdateLabelsRef = useRef(null);
 
     const clearSearchState = ({ resetTerm = true, closeSearchUi = true, reloadPlaces = true } = {}) => {
         if (resetTerm) setSearchTerm("");
@@ -540,11 +542,35 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 const point = lngLatToContainerPoint({ longitude: selected.longitude, latitude: selected.latitude });
                 setPopupPoint(point);
             };
+            handleUpdateLabels = () => {
+                const currentPlaces = placesRef.current;
+                if (!currentPlaces || currentPlaces.length === 0) {
+                    setMarkerLabels([]);
+                    return;
+                }
+                const labels = [];
+                for (const p of currentPlaces) {
+                    if (!p.name || p.isMarked === false) continue;
+                    const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
+                    if (point) {
+                        labels.push({
+                            x: point.x,
+                            y: point.y,
+                            name: p.name,
+                            category: p.category || '',
+                            id: p.id
+                        });
+                    }
+                }
+                setMarkerLabels(labels);
+            };
+            handleUpdateLabelsRef.current = handleUpdateLabels;
             handleResize = () => {
                 if (mapRef.current && typeof mapRef.current.resize === "function") {
                     mapRef.current.resize();
                 }
                 handleUpdatePopup();
+                handleUpdateLabels();
             };
 
             mapRef.current.on("click", handleMapClick);
@@ -552,6 +578,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             mapRef.current.on("zoomend", handleViewChange);
             mapRef.current.on("moveend", handleUpdatePopup);
             mapRef.current.on("zoomend", handleUpdatePopup);
+            mapRef.current.on("moveend", handleUpdateLabels);
+            mapRef.current.on("zoomend", handleUpdateLabels);
             window.addEventListener("resize", handleResize);
             if (containerRef.current && typeof ResizeObserver !== "undefined") {
                 resizeObserver = new ResizeObserver(() => {
@@ -620,6 +648,10 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 if (handleUpdatePopup) {
                     mapRef.current.off("moveend", handleUpdatePopup);
                     mapRef.current.off("zoomend", handleUpdatePopup);
+                }
+                if (handleUpdateLabels) {
+                    mapRef.current.off("moveend", handleUpdateLabels);
+                    mapRef.current.off("zoomend", handleUpdateLabels);
                 }
             }
             if (handlePageHide) window.removeEventListener("pagehide", handlePageHide);
@@ -716,6 +748,10 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             setPlaces(data);
             if (searchResultsRef.current === null) {
                 renderMarkers(mapRef.current, markersRef, data, showPopup);
+                // Schedule label update after markers render
+                setTimeout(() => {
+                    if (handleUpdateLabelsRef.current) handleUpdateLabelsRef.current();
+                }, 50);
             }
         } catch (e) {
             console.error("加载地点失败", e);
@@ -1410,6 +1446,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 tipText={tipText}
                 customThemeColor={customThemeColor}
                 customThemeSecondary={customThemeSecondary}
+                markerLabels={markerLabels}
                 authPending={authPending}
                 handleLocateMe={handleLocateMe}
                 locating={locating}

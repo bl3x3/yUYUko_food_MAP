@@ -34,18 +34,22 @@ function escapeHtml(input) {
 }
 
 function buildMarkerContent(placeName, category) {
-    const safeName = placeName ? escapeHtml(placeName) : '';
     const isThunder = category && String(category).includes('避雷');
     const iconSrc = isThunder ? noIcon : yesIcon;
-    const dark = isDarkMode();
-    const labelColor = dark ? '#e5e7eb' : '#1f2937';
-    const labelBg = dark ? 'var(--theme-secondary)' : '#fff9f6';
     return `
-        <div style="position:relative;width:36px;height:43px;overflow:visible;">
-            <img src="${iconSrc}" style="display:block;width:36px;height:43px;position:relative;z-index:1;" draggable="false" />
-            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);z-index:2;background:${labelBg};color:${labelColor};font-size:12px;line-height:16px;padding:2px 8px 2px 6px;border-radius:2px;border:1px solid var(--theme-primary);border-left:5px solid var(--theme-primary);white-space:nowrap;margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);">${safeName}</div>` : ''}
+        <div style="position:relative;width:36px;height:43px;overflow:visible;pointer-events:none;">
+            <img src="${iconSrc}" style="display:block;width:36px;height:43px;" draggable="false" />
         </div>
     `;
+}
+
+// Build label HTML for overlay rendering
+export function buildLabelHtml(name, category) {
+    const safeName = name ? escapeHtml(name) : '';
+    if (!safeName) return '';
+    const isThunder = category && String(category).includes('避雷');
+    const thunderStyle = isThunder ? 'border-left-color:#dc2626;' : '';
+    return `<div style="display:inline-block;background:var(--theme-secondary);color:var(--theme-secondary);font-size:12px;line-height:16px;padding:2px 8px 2px 6px;border-radius:2px;border:1px solid var(--theme-primary);border-left:5px solid var(--theme-primary);${thunderStyle}white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.15);pointer-events:none;">${safeName}</div>`;
 }
 
 function buildClusterContent(count) {
