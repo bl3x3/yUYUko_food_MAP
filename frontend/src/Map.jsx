@@ -135,6 +135,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const loadPlacesRef = useRef(null);
     const handleUpdateLabelsRef = useRef(null);
     const placesRef = useRef([]);
+    const visibleIndividualIdsRef = useRef(new Set());
 
     const clearSearchState = ({ resetTerm = true, closeSearchUi = true, reloadPlaces = true } = {}) => {
         if (resetTerm) setSearchTerm("");
@@ -546,6 +547,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             };
             handleUpdateLabels = () => {
                 const currentPlaces = placesRef.current;
+                const visibleIds = visibleIndividualIdsRef.current;
                 if (!currentPlaces || currentPlaces.length === 0) {
                     setMarkerLabels([]);
                     return;
@@ -553,6 +555,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
+                    // Only show labels for non-clustered individual markers
+                    if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
                     if (point) {
                         labels.push({
@@ -582,6 +586,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             mapRef.current.on("zoomend", handleUpdatePopup);
             mapRef.current.on("moveend", handleUpdateLabels);
             mapRef.current.on("zoomend", handleUpdateLabels);
+            mapRef.current.on("mapmove", handleUpdateLabels);
+            mapRef.current.on("zoomchange", handleUpdateLabels);
             window.addEventListener("resize", handleResize);
             if (containerRef.current && typeof ResizeObserver !== "undefined") {
                 resizeObserver = new ResizeObserver(() => {
@@ -654,6 +660,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 if (handleUpdateLabels) {
                     mapRef.current.off("moveend", handleUpdateLabels);
                     mapRef.current.off("zoomend", handleUpdateLabels);
+                    mapRef.current.off("mapmove", handleUpdateLabels);
+                    mapRef.current.off("zoomchange", handleUpdateLabels);
                 }
             }
             if (handlePageHide) window.removeEventListener("pagehide", handlePageHide);
@@ -750,7 +758,9 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             setPlaces(data);
             placesRef.current = data;
             if (searchResultsRef.current === null) {
-                renderMarkers(mapRef.current, markersRef, data, showPopup);
+                renderMarkers(mapRef.current, markersRef, data, showPopup, {
+                    onIndividualIds: (ids) => { visibleIndividualIdsRef.current = ids; }
+                });
                 // Schedule label update after markers render
                 setTimeout(() => {
                     if (handleUpdateLabelsRef.current) handleUpdateLabelsRef.current();

@@ -196,7 +196,8 @@ function zoomToCluster(map, items) {
     map.setBounds(bounds);
 }
 
-export function renderMarkers(map, markersRef, list, onClick) {
+export function renderMarkers(map, markersRef, list, onClick, opts) {
+    const onIndividualIds = opts && opts.onIndividualIds;
     // 清空旧 markers及聚类
     if (markersRef.current && markersRef.current.__cluster) {
         const clusterState = markersRef.current.__cluster;
@@ -251,6 +252,11 @@ export function renderMarkers(map, markersRef, list, onClick) {
         // 缩放级别超出聚类范围时，直接显示全部独立标记
         if (radius <= 0) {
             created.forEach((m) => m.setMap(map));
+            if (onIndividualIds) {
+                const ids = new Set();
+                list.forEach(p => { if (p.id != null) ids.add(p.id); });
+                onIndividualIds(ids);
+            }
             markersRef.current.__cluster = {
                 clusterMarkers: [],
                 handlers: markersRef.current.__cluster ? markersRef.current.__cluster.handlers : []
@@ -364,9 +370,11 @@ export function renderMarkers(map, markersRef, list, onClick) {
         }
 
         const clusterMarkers = [];
+        const individualIds = new Set();
         for (const groupPlaces of mergedGroups.values()) {
             if (groupPlaces.length === 1) {
                 const place = groupPlaces[0];
+                if (place.id != null) individualIds.add(place.id);
                 const marker = markerByPlace.get(place) || markerByKey.get(place.id != null ? `id:${place.id}` : '');
                 if (marker) marker.setMap(map);
                 continue;
@@ -395,6 +403,7 @@ export function renderMarkers(map, markersRef, list, onClick) {
             clusterMarkers,
             handlers: markersRef.current.__cluster ? markersRef.current.__cluster.handlers : []
         };
+        if (onIndividualIds) onIndividualIds(individualIds);
     };
 
     // 仅在缩放变化时刷新聚类（地理距离不随平移改变，无需在 moveend 重算）
