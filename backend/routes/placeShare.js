@@ -48,7 +48,13 @@ function buildOgDescription(place) {
     const parts = [];
     if (place?.category) parts.push(place.category);
     if (place?.description) parts.push(place.description);
-    return parts.join(" · ") || place?.name || "东方饭联地图地点";
+    const base = parts.join(" · ");
+    // QQ 爬虫忽略 <30 字符的 og:description 并回退为显示 URL，不足时补站点上下文
+    if (base.length >= 30) return base;
+    const name = place?.name;
+    const suffix = "上东方饭联地图，与饭搭子一起发现身边的美食好店，从此吃饭不踩雷";
+    if (name) return `${name} · ${suffix}`;
+    return suffix;
 }
 
 function getOgImageUrl(place, frontendBase) {
@@ -136,7 +142,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
       <h1>${safeName}</h1>
       <p class="meta">${safeMetaDesc}</p>
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
-      <a class="btn" href="${actionUrl}">${actionLabel}</a>
+      <div class="btn">${actionLabel}</div>
     </div>
   </div>
 </body>
