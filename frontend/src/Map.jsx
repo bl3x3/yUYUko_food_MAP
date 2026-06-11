@@ -134,6 +134,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     useEffect(() => { commentOpenRef.current = commentOpen; }, [commentOpen]);
     const loadPlacesRef = useRef(null);
     const handleUpdateLabelsRef = useRef(null);
+    const placesRef = useRef([]);
 
     const clearSearchState = ({ resetTerm = true, closeSearchUi = true, reloadPlaces = true } = {}) => {
         if (resetTerm) setSearchTerm("");
@@ -747,6 +748,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 maxLat: targetMaxLat
             });
             setPlaces(data);
+            placesRef.current = data;
             if (searchResultsRef.current === null) {
                 renderMarkers(mapRef.current, markersRef, data, showPopup);
                 // Schedule label update after markers render
