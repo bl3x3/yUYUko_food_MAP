@@ -67,7 +67,7 @@ export default function ManagePanel({
     return (
         <div style={{
             position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
-            background: dark ? '#0b1220' : '#fff9f6', padding: 12, zIndex: 5000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 4px 18px rgba(0,0,0,0.35)",
+            background: dark ? 'var(--theme-secondary)' : '#fff9f6', padding: 12, zIndex: 5000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 4px 18px rgba(0,0,0,0.35)",
             minWidth: 360, maxWidth: "90%"
         }}>
             <h4 style={{ margin: 0, color: dark ? '#e5e7eb' : 'inherit' }}>管理地点 — {selectedPlace.name}</h4>

@@ -229,7 +229,7 @@ export default function AdminInvitecode({ backendUrl = null }) {
             </div>
 
 
-            <div style={{ marginBottom: 12, padding: 8, border: dark ? '1px solid #1f2937' : '1px solid #eee', borderRadius: 6, background: dark ? '#0b1220' : undefined }}>
+            <div style={{ marginBottom: 12, padding: 8, border: dark ? '1px solid #1f2937' : '1px solid #eee', borderRadius: 6, background: dark ? 'var(--theme-secondary)' : undefined }}>
                 <div style={{ marginBottom: 8 }}><strong>创建新邀请码</strong></div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <label style={{ marginRight: 8, color: dark ? '#9ca3af' : 'inherit' }}>可用次数：</label>

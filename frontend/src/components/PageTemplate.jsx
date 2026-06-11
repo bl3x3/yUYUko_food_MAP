@@ -30,7 +30,7 @@ export default function PageTemplate({ title, onBack, breadcrumb = [], children,
     };
 
     const breadcrumbStyle = { color: dark ? '#9ca3af' : '#6b7280', fontSize: 16, marginBottom: 12 };
-    const cardStyle = { background: dark ? '#0b1220' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
+    const cardStyle = { background: dark ? 'var(--theme-secondary)' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
 
     return (
         <div style={rootStyle}>

@@ -3,6 +3,7 @@ import TextInput from './components/TextInput';
 import ScrollableView from './components/ScrollableView';
 import Button from './components/Button';
 import qrcodeImg from './img/qrcode.png';
+import useDarkMode from './utils/useDarkMode';
 import { getThemeColor, getThemeSecondary, colorToRgba, darkenColor } from './utils/theme';
 
 const REQUEST_TIMEOUT_MS = 12000;
@@ -10,18 +11,20 @@ const MAX_USERNAME_LENGTH = 64;
 const MAX_PASSWORD_LENGTH = 128;
 const MAX_INVITE_CODE_LENGTH = 64;
 
-const STATIC_COLORS = {
-    panelBackground: "#fff9f6",
-    textStrong: "#1f2328",
-    textMuted: "#57606a",
-    border: "#d0d7de",
-    tabGroupBackground: "#f6f8fa",
-    inputBackground: "#fbfdff",
-    successText: "#0f7a0f",
-    successBackground: "#edf9ed",
-    errorText: "#b00020",
-    errorBackground: "#fff1f3"
-};
+function getStaticColors(dark) {
+    return {
+        panelBackground: dark ? 'var(--theme-secondary)' : "#fff9f6",
+        textStrong: dark ? '#e5e7eb' : "#1f2328",
+        textMuted: dark ? '#9ca3af' : "#57606a",
+        border: dark ? '#334155' : "#d0d7de",
+        tabGroupBackground: dark ? '#1f2937' : "#f6f8fa",
+        inputBackground: dark ? '#0f172a' : "#fbfdff",
+        successText: dark ? '#4ade80' : "#0f7a0f",
+        successBackground: dark ? '#052e16' : "#edf9ed",
+        errorText: dark ? '#fda4af' : "#b00020",
+        errorBackground: dark ? '#450a0a' : "#fff1f3"
+    };
+}
 
 function getThemeUIColors(themeColor) {
     const primary = themeColor || '#1f6feb';
@@ -45,7 +48,7 @@ function getTabButtonStyle(isActive, disabled, uiColors) {
     return {
         border: `1px solid ${isActive ? uiColors.tabActiveBorder : "transparent"}`,
         background: isActive ? uiColors.tabActiveBackground : "transparent",
-        color: isActive ? uiColors.tabActiveText : STATIC_COLORS.textMuted,
+        color: isActive ? uiColors.tabActiveText : uiColors.textMuted,
         borderRadius: 8,
         padding: "7px 14px",
         lineHeight: 1.2,
@@ -245,8 +248,9 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
             setLoading(false);
         }
     };
+    const dark = useDarkMode();
     const themeColor = getThemeColor();
-    const uiColors = { ...STATIC_COLORS, ...getThemeUIColors(themeColor) };
+    const uiColors = { ...getStaticColors(dark), ...getThemeUIColors(themeColor) };
 
     const isSuccessMessage = message.includes("成功");
     const modeText = tab === "login" ? "登录已有账号" : "注册新账号";

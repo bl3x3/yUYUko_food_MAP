@@ -546,7 +546,7 @@ export default function MapUI(props) {
                             padding: '6px 34px 6px 12px',
                             borderRadius: 22,
                             border: dark ? '2px solid rgba(255,255,255,0.06)' : `2px solid ${customThemeColor}`,
-                            background: dark ? '#0b1220' : '#fff9f6',
+                            background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                             color: dark ? '#e5e7eb' : 'inherit',
                             outline: 'none',
                             boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}, 0 0 8px ${hexToRgba(customThemeColor, 0.25)}`,
@@ -592,7 +592,7 @@ export default function MapUI(props) {
                             right: 0,
                             width: '100%',
                             maxHeight: '60vh',
-                            background: dark ? '#0b1220' : '#fff9f6',
+                            background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                             borderRadius: 8,
                             boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                             border: dark ? '1px solid rgba(255,255,255,0.06)' : `1px solid ${hexToRgba(customThemeColor, 0.5)}`,
@@ -836,7 +836,7 @@ export default function MapUI(props) {
                         pointerEvents: "auto"
                     }}
                 >
-                    <div ref={popupRef} style={{ background: dark ? '#0b1220' : '#fff9f6', padding: 10, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.25)", minWidth: 200, width: 'min(92vw, 320px)', maxWidth: 'min(92vw, 320px)' }}>
+                    <div ref={popupRef} style={{ background: dark ? 'var(--theme-secondary)' : '#fff9f6', padding: 10, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.25)", minWidth: 200, width: 'min(92vw, 320px)', maxWidth: 'min(92vw, 320px)' }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <strong style={{ fontSize: 14, color: dark ? '#e5e7eb' : undefined }}>{selectedPlace.name}</strong>
                             {!hideNonSearchButtons && (
@@ -972,7 +972,7 @@ export default function MapUI(props) {
                 }}>
                     <div style={{
                         width: 'min(420px, 92vw)',
-                        background: dark ? '#0b1220' : '#fff9f6',
+                        background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                         borderRadius: 10,
                         boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.24)',
                         border: dark ? '1px solid #334155' : '1px solid #e5e7eb',
@@ -1025,7 +1025,7 @@ export default function MapUI(props) {
                 >
                     <div style={{
                         width: 'min(420px, 92vw)',
-                        background: dark ? '#0b1220' : '#fff9f6',
+                        background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                         borderRadius: 10,
                         boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.65)' : '0 8px 32px rgba(0,0,0,0.24)',
                         border: dark ? '1px solid #334155' : '1px solid #e5e7eb',
@@ -1107,7 +1107,7 @@ export default function MapUI(props) {
             {!hideNonSearchButtons && !pickerMode && addingPos && (
                 <div style={{
                     position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
-                    background: dark ? '#0b1220' : '#fff9f6', padding: 12, zIndex: 3000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.3)"
+                    background: dark ? 'var(--theme-secondary)' : '#fff9f6', padding: 12, zIndex: 3000, borderRadius: 6, boxShadow: dark ? "0 6px 24px rgba(0,0,0,0.6)" : "0 2px 12px rgba(0,0,0,0.3)"
                 }}>
                     <h4 style={{ margin: '0 0 12px 0', color: dark ? '#e5e7eb' : 'inherit' }}>添加地点</h4>
                     <AddForm backendUrl={backendUrl} token={token} defaultPos={addingPos} onCancel={onAddCancel} onSubmit={onAddSubmit} defaultName={addingPrefill?.name} defaultCategory={addingPrefill?.category} defaultDescription={addingPrefill?.description} />

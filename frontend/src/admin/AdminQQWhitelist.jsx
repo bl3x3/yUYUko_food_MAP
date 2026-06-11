@@ -222,7 +222,7 @@ export default function AdminQQWhitelist({ backendUrl = null }) {
                 <Button themeAware onClick={fetchEntries} disabled={loading}>刷新</Button>
             </div>
 
-            <div style={{ marginBottom: 12, padding: 8, border: dark ? '1px solid #1f2937' : '1px solid #eee', borderRadius: 6, background: dark ? '#0b1220' : undefined }}>
+            <div style={{ marginBottom: 12, padding: 8, border: dark ? '1px solid #1f2937' : '1px solid #eee', borderRadius: 6, background: dark ? 'var(--theme-secondary)' : undefined }}>
                 <div style={{ marginBottom: 8 }}><strong>添加QQ号到白名单</strong></div>
                 <div style={{ marginBottom: 8 }}>
                     <label style={{ marginRight: 8, color: dark ? '#9ca3af' : 'inherit' }}>单个QQ号：</label>
@@ -247,7 +247,7 @@ export default function AdminQQWhitelist({ backendUrl = null }) {
                             padding: '8px 10px',
                             borderRadius: 8,
                             border: dark ? '1px solid #1f2937' : '1px solid #ccc',
-                            background: dark ? '#0b1220' : '#fff9f6',
+                            background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                             color: dark ? '#e5e7eb' : 'inherit',
                             resize: 'vertical',
                             fontSize: 14

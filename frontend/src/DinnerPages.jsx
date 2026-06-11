@@ -56,7 +56,7 @@ function cardStyle(dark) {
     return {
         borderRadius: 8,
         border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}`,
-        background: dark ? '#0b1220' : '#fff9f6',
+        background: dark ? 'var(--theme-secondary)' : '#fff9f6',
         padding: 20
     };
 }
@@ -299,7 +299,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
                             style={{
                                 borderRadius: 12,
                                 border: dark ? '1px solid #334155' : '1px solid #bcccdc',
-                                background: dark ? '#0b1220' : '#fff9f6',
+                                background: dark ? 'var(--theme-secondary)' : '#fff9f6',
                                 color: dark ? '#e5e7eb' : '#102a43',
                                 padding: 12
                             }}
@@ -315,7 +315,7 @@ export function DinnerCreatePage({ backendUrl, token, isAuth, onCreated, onRequi
             </div>
 
             {pickerOpen && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 3500, background: dark ? '#0b1220' : '#f8fafc' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 3500, background: dark ? 'var(--theme-secondary)' : '#f8fafc' }}>
                     <MapView
                         backendUrl={backendUrl}
                         token={token}

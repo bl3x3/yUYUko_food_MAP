@@ -16,7 +16,7 @@ export default function Settings({ user, onBack, onOpenEditAvatar, onOpenEditUse
     const container = { maxWidth: 960, margin: '0 auto' };
     const titleRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 };
     const captionStyle = { marginBottom: 14, color: dark ? '#9ca3af' : '#666', fontSize: 16 };
-    const cardStyle = { background: dark ? '#0b1220' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
+    const cardStyle = { background: dark ? 'var(--theme-secondary)' : '#fff9f6', borderRadius: 8, padding: 16, border: `1px solid ${dark ? '#1f2937' : '#e5e7eb'}` };
     const sepBg = dark ? '#1f2937' : '#a2a2a2';
 
     const handleDeleteAccount = async () => {
