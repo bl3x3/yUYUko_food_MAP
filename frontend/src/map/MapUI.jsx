@@ -508,7 +508,7 @@ export default function MapUI(props) {
                         style={{
                             position: 'absolute',
                             left: label.x,
-                            top: label.y + 45,
+                            top: label.y + 2,
                             transform: 'translateX(-50%)',
                             zIndex: 1500,
                             pointerEvents: 'none',
