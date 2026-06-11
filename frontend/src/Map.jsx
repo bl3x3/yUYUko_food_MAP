@@ -555,24 +555,21 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 }
                 const cw = container ? container.clientWidth : window.innerWidth;
                 const ch = container ? container.clientHeight : window.innerHeight;
-                const maxHalfW = 100; // estimate: max label half-width in px
-                const labelH = 20;   // estimate: label height in px
+                const maxHalfW = 100;
+                const labelH = 22;   // label height + gap
+                const edgeMargin = 5; // extra margin before showing/hiding
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
-                    // Only show labels for non-clustered individual markers
                     if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
                     if (!point) continue;
-                    // Skip if marker is outside viewport
-                    if (point.x < -60 || point.x > cw + 60) continue;
-                    // Skip if label would be cut off at top or bottom
-                    if (point.y < 0 || point.y > ch - labelH) continue;
-                    // Clamp x so label text hugs the viewport edge
                     const halfW = Math.min((p.name || '').length * 7 + 12, maxHalfW);
-                    const x = Math.max(halfW, Math.min(cw - halfW, point.x));
+                    // Skip if label would extend beyond any edge
+                    if (point.x < halfW + edgeMargin || point.x > cw - halfW - edgeMargin) continue;
+                    if (point.y < edgeMargin || point.y > ch - labelH - edgeMargin) continue;
                     labels.push({
-                        x: x,
+                        x: point.x,
                         y: point.y,
                         name: p.name,
                         category: p.category || '',

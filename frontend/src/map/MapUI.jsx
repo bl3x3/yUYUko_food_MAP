@@ -496,7 +496,7 @@ export default function MapUI(props) {
     };
 
     return (
-        <>
+        <div style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
             <div ref={containerRef} id="map" style={{ width: "100%", height: "100%", position: "relative" }}></div>
 
             {/* Marker name labels — rendered as overlay above all marker images */}
@@ -1223,6 +1223,6 @@ export default function MapUI(props) {
                     </ScrollableView>
                 </div>
             )}
-        </>
+        </div>
     );
 }
