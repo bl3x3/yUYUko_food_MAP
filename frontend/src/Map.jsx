@@ -114,7 +114,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
     const canWrite = hasToken && isAuthenticated && !isBanned;
 
     const [manageOpen, setManageOpen] = useState(false);
-    const [manageEdit, setManageEdit] = useState({ name: "", category: "", description: "" });
+    const [manageEdit, setManageEdit] = useState({ name: "", category: "", description: "", per_person_cost: null });
     const [manageSubmitting, setManageSubmitting] = useState(false);
     const [manageMessage, setManageMessage] = useState("");
 
@@ -1284,6 +1284,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
             name: selectedPlace.name || "",
             category: selectedPlace.category || "",
             description: selectedPlace.description || "",
+            per_person_cost: selectedPlace.per_person_cost != null ? selectedPlace.per_person_cost : null,
             exterior_images: selectedPlace.exterior_images ? JSON.parse(selectedPlace.exterior_images) : [],
             menu_images: selectedPlace.menu_images ? JSON.parse(selectedPlace.menu_images) : []
         });
@@ -1331,6 +1332,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 name: (manageEdit.name || "").trim(),
                 category: (manageEdit.category || "").trim(),
                 description: (manageEdit.description || "").trim(),
+                per_person_cost: manageEdit.per_person_cost,
                 exterior_images: (manageEdit.exterior_images || []).filter(Boolean),
                 menu_images: (manageEdit.menu_images || []).filter(Boolean)
             };
@@ -1360,6 +1362,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                     name: (manageEdit.name || "").trim(),
                     category: (manageEdit.category || "").trim(),
                     description: (manageEdit.description || "").trim(),
+                    per_person_cost: manageEdit.per_person_cost,
                     exterior_images: (manageEdit.exterior_images || []).filter(Boolean),
                     menu_images: (manageEdit.menu_images || []).filter(Boolean)
                 },

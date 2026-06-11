@@ -196,6 +196,7 @@ function init() {
             latitude REAL,
             longitude REAL,
             category TEXT,
+            per_person_cost INTEGER,
             creator_id INTEGER,
             created_time DATETIME DEFAULT CURRENT_TIMESTAMP
         );`);
@@ -216,6 +217,7 @@ function init() {
         addPlaceIfMissing('updated_by INTEGER');
         addPlaceIfMissing('exterior_images TEXT');
         addPlaceIfMissing('menu_images TEXT');
+        addPlaceIfMissing('per_person_cost INTEGER');
 
         try {
             rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_place_creator_id ON Place(creator_id);`);

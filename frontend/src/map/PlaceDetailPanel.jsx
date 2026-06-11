@@ -37,6 +37,13 @@ export default function PlaceDetailPanel({ place, onClose }) {
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{place.description || '暂无描述'}</div>
                     </div>
 
+                    {place.per_person_cost != null && (
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontSize: 13, color: dark ? '#94a3b8' : '#64748b', marginBottom: 4 }}>人均</div>
+                            <div>¥{place.per_person_cost}</div>
+                        </div>
+                    )}
+
                     {exteriorImages.length > 0 && (
                         <div style={{ marginBottom: 24 }}>
                             <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 8, color: dark ? '#cbd5e1' : '#475569' }}>外观/招牌</div>
