@@ -1,6 +1,6 @@
 export const DEFAULT_PRIMARY = '#f8a7d3';
 export const DEFAULT_SECONDARY = '#d0f8ff';
-export const DEFAULT_DARK_PRIMARY = '#592943';
+export const DEFAULT_DARK_PRIMARY = '#733456';
 export const DEFAULT_DARK_SECONDARY = '#162833';
 
 export function applyDarkMode(enabled) {
