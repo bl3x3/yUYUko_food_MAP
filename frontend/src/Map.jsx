@@ -401,6 +401,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         let handlePageHide = null;
         let handleVisibilityChange = null;
         let handleUpdatePopup = null;
+        let handleUpdateLabels = null;
         let handleResize = null;
         let handleMapStyleChange = null;
         let resizeObserver = null;
