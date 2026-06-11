@@ -14,7 +14,7 @@ import { AuthProvider } from "./AuthContext";
 import BanNotice from "./components/BanNotice";
 import { TipsProvider } from "./components/Tips";
 import { ConfirmProvider } from "./components/Confirm";
-import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary } from "./utils/theme";
+import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary, getSystemPrefersDark, onSystemColorSchemeChange } from "./utils/theme";
 import useDarkMode from './utils/useDarkMode';
 import { DinnerCreatePage, DinnerDetailPage, DinnerListPage, isDinnerPath, parseDinnerIdFromPath } from './DinnerPages';
 import { getNoticeColorOption } from './utils/noticeColors';
@@ -138,7 +138,7 @@ export default function App() {
             // remove any persisted map settings so logged-out view uses defaults
             try { localStorage.removeItem('map_settings'); } catch (e) { }
             // ensure dark mode off and theme color cleared
-            try { applyDarkMode(false); } catch (e) { }
+            try { applyDarkMode(getSystemPrefersDark()); } catch (e) { }
             try { applyThemeColors('', ''); } catch (e) { }
             // inform map to apply light default style
             try { document.dispatchEvent(new CustomEvent('mapstylechange', { detail: { map_style_light: 'amap://styles/normal' } })); } catch (e) { }
@@ -148,12 +148,17 @@ export default function App() {
     }, [token, clearAuthState, goPath]);
 
     useEffect(() => {
-        // On mount, apply localStorage fallback theme if present
+        // On mount, apply localStorage fallback theme if present.
+        // Otherwise follow system color scheme preference.
         try {
             const raw = localStorage.getItem('map_settings');
             if (raw) {
                 const ms = JSON.parse(raw);
-                if (ms && typeof ms.dark_mode !== 'undefined') applyDarkMode(!!ms.dark_mode);
+                if (ms && typeof ms.dark_mode !== 'undefined') {
+                    applyDarkMode(!!ms.dark_mode);
+                } else {
+                    applyDarkMode(getSystemPrefersDark());
+                }
                 try {
                     const pageIsDark = document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
                     const shouldApplyThemeColor = !!token || !!(ms && ms.dark_mode) || pageIsDark;
@@ -161,6 +166,10 @@ export default function App() {
                         applyThemeColors(resolveThemePrimary(ms), resolveThemeSecondary(ms));
                     }
                 } catch (e) { /* ignore */ }
+            } else {
+                // No saved settings — follow system
+                applyDarkMode(getSystemPrefersDark());
+                applyThemeColors(resolveThemePrimary(null), resolveThemeSecondary(null));
             }
         } catch (e) { }
 
@@ -215,10 +224,39 @@ export default function App() {
                 return;
             }
 
-            // default: remove dark mode, use defaults
-            applyDarkMode(false);
+            // default: follow system color scheme
+            applyDarkMode(getSystemPrefersDark());
             applyThemeColors(resolveThemePrimary(null), resolveThemeSecondary(null));
         } catch (e) { /* ignore */ }
+    }, [user]);
+
+    // Follow system color scheme changes when user hasn't set an explicit preference
+    useEffect(() => {
+        const hasExplicitPreference = () => {
+            try {
+                if (user?.map_settings && typeof user.map_settings.dark_mode !== 'undefined') return true;
+                const raw = localStorage.getItem('map_settings');
+                if (raw) {
+                    const ms = JSON.parse(raw);
+                    if (ms && typeof ms.dark_mode !== 'undefined') return true;
+                }
+            } catch (e) { /* ignore */ }
+            return false;
+        };
+
+        const cleanup = onSystemColorSchemeChange((isDark) => {
+            if (!hasExplicitPreference()) {
+                applyDarkMode(isDark);
+                // Re-resolve theme colors for the new mode
+                let ms = null;
+                try {
+                    const raw = localStorage.getItem('map_settings');
+                    if (raw) ms = JSON.parse(raw);
+                } catch (e) { }
+                applyThemeColors(resolveThemePrimary(ms), resolveThemeSecondary(ms));
+            }
+        });
+        return cleanup;
     }, [user]);
 
     useEffect(() => {

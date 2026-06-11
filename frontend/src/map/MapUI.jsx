@@ -883,15 +883,15 @@ export default function MapUI(props) {
                                         <Button
                                             onClick={handleNavigate}
                                             disabled={!hasNavigationTarget}
-                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
-                                            导航
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>near_me</span>
                                         </Button>
                                     </Tooltip>
                                     <Tooltip text="分享此地点">
                                         <Button
                                             onClick={() => setShareOpen(true)}
-                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                             <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
                                                 share
@@ -900,7 +900,7 @@ export default function MapUI(props) {
                                     </Tooltip>
                                     {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
                                     { /*<Tooltip text="在这里留下你的评论">
-                                    <Button onClick={openCommentPanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>评论</Button>
+                                    <Button onClick={openCommentPanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : undefined, color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4 }}>评论</Button>
                                 </Tooltip>
                                 <span style={{ padding: 4 }}></span> */ }
                                     {selectedPlace.isMarked !== false && (
@@ -908,7 +908,7 @@ export default function MapUI(props) {
                                             <Button
                                                 onClick={() => onToggleFavorite && onToggleFavorite(selectedPlace)}
                                                 disabled={favoriteLoading}
-                                                style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : undefined), padding: '6px 10px', borderRadius: 4, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                                style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: favoriteIds && favoriteIds.has(selectedPlace.id) ? '#f5220b' : (dark ? '#e5e7eb' : '#592943'), padding: '6px 10px', borderRadius: 4, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                             >
                                                 <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
                                                     {favoriteIds && favoriteIds.has(selectedPlace.id) ? 'heart_minus' : 'heart_plus'}
@@ -918,13 +918,19 @@ export default function MapUI(props) {
                                     )}
                                     <Tooltip text={selectedPlace.isMarked === false ? '创建此地点' : '管理此地点'}>
                                         {selectedPlace.isMarked === false ? (
-                                            <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>创建</Button>
+                                            <Button onClick={openCreateFromPoi} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>add_circle</span>
+                                            </Button>
                                         ) : (
-                                            <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>管理</Button>
+                                            <Button onClick={openManagePanel} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>edit</span>
+                                            </Button>
                                         )}
                                     </Tooltip>
                                     <Tooltip text="查看详情与图片">
-                                        <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4 }}>详情</Button>
+                                        <Button onClick={() => setDetailOpen(true)} style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : '#592943', padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>more_horiz</span>
+                                        </Button>
                                     </Tooltip>
                                 </div>
                             )

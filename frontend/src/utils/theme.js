@@ -27,6 +27,28 @@ export function isDarkMode() {
     return document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
 }
 
+export function getSystemPrefersDark() {
+    if (typeof window === 'undefined') return false;
+    try {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Returns a cleanup function. Callback receives (isDark: boolean).
+export function onSystemColorSchemeChange(callback) {
+    if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+    try {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = (e) => callback(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    } catch (e) {
+        return () => {};
+    }
+}
+
 export function hexToRgba(hex, a = 1) {
     try {
         let h = (hex || '').replace('#', '');

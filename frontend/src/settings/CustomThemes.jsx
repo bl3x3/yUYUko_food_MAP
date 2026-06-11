@@ -4,7 +4,7 @@ import Button from '../components/Button';
 import TextInput from '../components/TextInput';
 import SelectInput from '../components/SelectInput';
 import { useTips } from '../components/Tips';
-import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary, DEFAULT_PRIMARY, DEFAULT_SECONDARY, DEFAULT_DARK_PRIMARY, DEFAULT_DARK_SECONDARY } from '../utils/theme';
+import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary, getSystemPrefersDark, DEFAULT_PRIMARY, DEFAULT_SECONDARY, DEFAULT_DARK_PRIMARY, DEFAULT_DARK_SECONDARY } from '../utils/theme';
 import useDarkMode from '../utils/useDarkMode';
 
 const STYLE_OPTIONS = [
@@ -18,7 +18,7 @@ const STYLE_OPTIONS = [
 ];
 
 export default function CustomThemes({ user, onBack, backendUrl, token, onUpdateUser }) {
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => getSystemPrefersDark());
     const [darkMapStyle, setDarkMapStyle] = useState('amap://styles/dark');
     const [lightMapStyle, setLightMapStyle] = useState('amap://styles/normal');
     const [loading, setLoading] = useState(false);
