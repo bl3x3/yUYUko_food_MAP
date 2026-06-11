@@ -4,7 +4,7 @@ import Button from '../components/Button';
 import TextInput from '../components/TextInput';
 import SelectInput from '../components/SelectInput';
 import { useTips } from '../components/Tips';
-import { applyDarkMode, applyThemeColor } from '../utils/theme';
+import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary, DEFAULT_PRIMARY, DEFAULT_SECONDARY, DEFAULT_DARK_PRIMARY, DEFAULT_DARK_SECONDARY } from '../utils/theme';
 import useDarkMode from '../utils/useDarkMode';
 
 const STYLE_OPTIONS = [
@@ -22,7 +22,8 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
     const [darkMapStyle, setDarkMapStyle] = useState('amap://styles/dark');
     const [lightMapStyle, setLightMapStyle] = useState('amap://styles/normal');
     const [loading, setLoading] = useState(false);
-    const [themeColor, setThemeColor] = useState('#002fa7');
+    const [themeColor, setThemeColor] = useState(() => resolveThemePrimary(null));
+    const [themeSecondary, setThemeSecondary] = useState(() => resolveThemeSecondary(null));
     const showTip = useTips();
     const dark = useDarkMode();
 
@@ -46,9 +47,12 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
             setLightMapStyle(settings.map_style_light || 'amap://styles/normal');
         }
         if (settings && typeof settings.theme_color !== 'undefined') {
-            setThemeColor(settings.theme_color || '#002fa7');
-            try { applyThemeColor(settings.theme_color || '#002fa7'); } catch (e) { }
+            setThemeColor(settings.theme_color || resolveThemePrimary(null));
         }
+        if (settings && typeof settings.theme_color_secondary !== 'undefined') {
+            setThemeSecondary(settings.theme_color_secondary || resolveThemeSecondary(null));
+        }
+        try { applyThemeColors(resolveThemePrimary(settings), resolveThemeSecondary(settings)); } catch (e) { }
     }, [user]);
 
     const DARK_STYLE_IDS = ['amap://styles/dark', 'amap://styles/darkblue', 'amap://styles/grey', 'amap://styles/night'];
@@ -105,14 +109,15 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
         }
     };
 
-    const persistThemeColor = async (value) => {
+    const persistThemeColors = async (primary, secondary) => {
         setLoading(true);
         const existing = (user && user.map_settings) ? user.map_settings : (() => {
             try { const raw = localStorage.getItem('map_settings'); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
         })();
 
         const payload = { ...(existing || {}) };
-        payload.theme_color = value || '';
+        if (typeof primary !== 'undefined') payload.theme_color = primary || '';
+        if (typeof secondary !== 'undefined') payload.theme_color_secondary = secondary || '';
         try { window.localStorage.setItem('map_settings', JSON.stringify(payload)); } catch (e) { /* ignore */ }
         try {
             if (backendUrl && token) {
@@ -137,15 +142,17 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                     if (typeof onUpdateUser === 'function') onUpdateUser(data.user, token);
                     try {
                         const ms = data.user.map_settings || null;
-                        if (ms && typeof ms.theme_color !== 'undefined') setThemeColor(ms.theme_color || '#002fa7');
+                        if (ms && typeof ms.theme_color !== 'undefined') setThemeColor(ms.theme_color || resolveThemePrimary(null));
+                        if (ms && typeof ms.theme_color_secondary !== 'undefined') setThemeSecondary(ms.theme_color_secondary || resolveThemeSecondary(null));
                     } catch (e) { /* ignore */ }
-                    try { applyThemeColor(value || '#002fa7'); } catch (e) { }
+                    try { applyThemeColors(resolveThemePrimary(ms), resolveThemeSecondary(ms)); } catch (e) { }
                     showTip('已保存设置');
                 }
             } else {
                 localStorage.setItem('map_settings', JSON.stringify(payload));
-                setThemeColor(value || '#002fa7');
-                try { applyThemeColor(value || '#002fa7'); } catch (e) { }
+                if (typeof primary !== 'undefined') setThemeColor(primary || resolveThemePrimary(null));
+                if (typeof secondary !== 'undefined') setThemeSecondary(secondary || resolveThemeSecondary(null));
+                try { applyThemeColors(primary || resolveThemePrimary(null), secondary || resolveThemeSecondary(null)); } catch (e) { }
                 showTip('已保存到本地（未登录）');
             }
         } catch (e) {
@@ -292,7 +299,7 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                     />
 
                     <Button
-                        onClick={() => persistThemeColor(themeColor)}
+                        onClick={() => persistThemeColors(themeColor, themeSecondary)}
                         disabled={loading}
                         style={{
                             background: themeColor,
@@ -307,6 +314,34 @@ export default function CustomThemes({ user, onBack, backendUrl, token, onUpdate
                     >
                         保存
                     </Button>
+                </div>
+
+                <div style={{ marginTop: 14 }}>
+                    <div style={{ color: dark ? '#9ca3af' : '#6b7280', fontSize: 13 }}>自定义辅色（用于标签、面板等次要元素背景）</div>
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input
+                            type="color"
+                            value={themeSecondary}
+                            onChange={(e) => setThemeSecondary(e.target.value)}
+                            disabled={loading}
+                            style={{
+                                width: 56,
+                                height: 36,
+                                borderRadius: 6,
+                                border: dark ? '1px solid #334155' : '1px solid #d1d5db',
+                                background: dark ? '#07101a' : '#fff',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                padding: 6,
+                                boxSizing: 'border-box',
+                                outline: 'none'
+                            }}
+                        />
+                        <TextInput
+                            value={themeSecondary}
+                            onChange={(e) => setThemeSecondary(e.target.value)}
+                            style={{ width: 160 }}
+                        />
+                    </div>
                 </div>
             </div>
             <div style={{ marginTop: 18 }}>

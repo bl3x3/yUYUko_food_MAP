@@ -3,14 +3,14 @@ import Button from './Button';
 import Tooltip from './Tooltip';
 import defaultAvatar from '../img/default.png';
 import useDarkMode from '../utils/useDarkMode';
+import { pickContrastTextColor, DEFAULT_PRIMARY, DEFAULT_DARK_PRIMARY, isDarkMode } from '../utils/theme';
 
 const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth, onOpenAdmin, onOpenSettings, onGoHome, onOpenDinners, onOpenDinnerCreate, pathname, backendUrl, interactionDisabled = false }, ref) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef(null);
     const menuRef = useRef(null);
     const closeTimerRef = useRef(null);
-    const DEFAULT_THEME_COLOR = '#002fa7';
-    const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
+    const [themeColor, setThemeColor] = useState(() => isDarkMode() ? DEFAULT_DARK_PRIMARY : DEFAULT_PRIMARY);
 
     const dark = useDarkMode();
     const menuTextColor = dark ? '#e5e7eb' : 'inherit';
@@ -64,7 +64,7 @@ const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogou
                 } catch (e) { }
             }
             if (color) setThemeColor(color);
-            else setThemeColor(DEFAULT_THEME_COLOR);
+            else setThemeColor(isDarkMode() ? DEFAULT_DARK_PRIMARY : DEFAULT_PRIMARY);
         } catch (e) { }
     }, [user]);
 
@@ -72,8 +72,14 @@ const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogou
         const onThemeChange = (e) => {
             try {
                 const detail = (e && e.detail) ? e.detail : null;
-                if (detail && typeof detail.color !== 'undefined') {
-                    setThemeColor(detail.color || DEFAULT_THEME_COLOR);
+                if (detail) {
+                    if (typeof detail.color !== 'undefined') {
+                        setThemeColor(detail.color || (isDarkMode() ? DEFAULT_DARK_PRIMARY : DEFAULT_PRIMARY));
+                    }
+                    // Dark mode toggled — may need to switch default
+                    if (typeof detail.dark !== 'undefined' && (!detail.color || detail.color === '')) {
+                        setThemeColor(isDarkMode() ? DEFAULT_DARK_PRIMARY : DEFAULT_PRIMARY);
+                    }
                 }
             } catch (err) { }
         };
@@ -197,7 +203,7 @@ const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogou
                         style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                     />
                 ) : (
-                    <span style={{ fontWeight: 700, color: '#f2f2f2' }}>登录</span>
+                    <span style={{ fontWeight: 700, color: pickContrastTextColor(themeColor) }}>登录</span>
                 )}
             </div>
 

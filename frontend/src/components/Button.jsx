@@ -1,50 +1,6 @@
 import React, { useState } from 'react';
 import useDarkMode from '../utils/useDarkMode';
-import { getThemeColor } from '../utils/theme';
-
-function parseColorToRgb(color) {
-    if (!color || typeof color !== 'string') return null;
-    const c = color.trim().toLowerCase();
-
-    if (c.startsWith('#')) {
-        let hex = c.slice(1);
-        if (hex.length === 3 || hex.length === 4) {
-            hex = hex.split('').map(ch => ch + ch).join('');
-        }
-        if (hex.length !== 6 && hex.length !== 8) return null;
-        const int = parseInt(hex.slice(0, 6), 16);
-        if (Number.isNaN(int)) return null;
-        return {
-            r: (int >> 16) & 255,
-            g: (int >> 8) & 255,
-            b: int & 255
-        };
-    }
-
-    const m = c.match(/^rgba?\(([^)]+)\)$/);
-    if (!m) return null;
-    const parts = m[1].split(',').map(v => v.trim());
-    if (parts.length < 3) return null;
-    const r = Number(parts[0]);
-    const g = Number(parts[1]);
-    const b = Number(parts[2]);
-    if ([r, g, b].some(v => Number.isNaN(v) || v < 0 || v > 255)) return null;
-    return { r, g, b };
-}
-
-function srgbToLinear(v) {
-    const n = v / 255;
-    return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
-}
-
-function pickContrastTextColor(bgColor) {
-    const rgb = parseColorToRgb(bgColor);
-    if (!rgb) return '#111827';
-    const luminance = 0.2126 * srgbToLinear(rgb.r) + 0.7152 * srgbToLinear(rgb.g) + 0.0722 * srgbToLinear(rgb.b);
-    const contrastWithBlack = (luminance + 0.05) / 0.05;
-    const contrastWithWhite = 1.05 / (luminance + 0.05);
-    return contrastWithBlack >= contrastWithWhite ? '#111827' : '#ffffff';
-}
+import { getThemeColor, parseColorToRgb, pickContrastTextColor } from '../utils/theme';
 
 function normalizeColorValue(color) {
     return typeof color === 'string' ? color.trim().toLowerCase() : '';

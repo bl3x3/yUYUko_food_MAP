@@ -6,8 +6,10 @@ import { TipsContext } from '../components/Tips';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import PageTemplate from '../components/PageTemplate';
+import { getThemeColor, pickContrastTextColor } from '../utils/theme';
 
 export default function EditAvatar({ user, onBack, backendUrl, token, onUpdateUser }) {
+    const themeColor = getThemeColor() || '#3b82f6';
     const dark = useDarkMode();
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState('');
@@ -154,8 +156,8 @@ export default function EditAvatar({ user, onBack, backendUrl, token, onUpdateUs
                         onClick={handleUpload}
                         disabled={uploading || !file}
                         style={{
-                            width: '100%', padding: '12px', background: !file ? (dark ? '#374151' : '#e5e7eb') : '#3b82f6',
-                            color: !file ? (dark ? '#9ca3af' : '#9ca3af') : '#fff', border: 'none',
+                            width: '100%', padding: '12px', background: !file ? (dark ? '#374151' : '#e5e7eb') : themeColor,
+                            color: !file ? (dark ? '#9ca3af' : '#9ca3af') : pickContrastTextColor(themeColor), border: 'none',
                             fontWeight: 600
                         }}
                     >

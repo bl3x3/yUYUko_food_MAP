@@ -3,23 +3,19 @@ import TextInput from './components/TextInput';
 import ScrollableView from './components/ScrollableView';
 import Button from './components/Button';
 import qrcodeImg from './img/qrcode.png';
+import { getThemeColor, getThemeSecondary, colorToRgba, darkenColor } from './utils/theme';
 
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_USERNAME_LENGTH = 64;
 const MAX_PASSWORD_LENGTH = 128;
 const MAX_INVITE_CODE_LENGTH = 64;
-const UI_COLORS = {
+
+const STATIC_COLORS = {
     panelBackground: "#ffffff",
     textStrong: "#1f2328",
     textMuted: "#57606a",
     border: "#d0d7de",
     tabGroupBackground: "#f6f8fa",
-    tabActiveBackground: "#e7f1ff",
-    tabActiveBorder: "#8cb4ff",
-    tabActiveText: "#0a3069",
-    primaryAction: "#1f6feb",
-    primaryActionBorder: "#1558b0",
-    primaryActionDisabled: "#8fb7f2",
     inputBackground: "#fbfdff",
     successText: "#0f7a0f",
     successBackground: "#edf9ed",
@@ -27,11 +23,29 @@ const UI_COLORS = {
     errorBackground: "#fff1f3"
 };
 
-function getTabButtonStyle(isActive, disabled) {
+function getThemeUIColors(themeColor) {
+    const primary = themeColor || '#1f6feb';
+    const secondary = getThemeSecondary() || primary;
+    const primaryBorder = darkenColor(primary, 0.18);
+    const primaryDisabled = colorToRgba(primary, 0.5);
+    const tabActiveBg = colorToRgba(secondary, 0.15);
+    const tabActiveBorder = colorToRgba(secondary, 0.4);
+    const tabActiveText = primary;
     return {
-        border: `1px solid ${isActive ? UI_COLORS.tabActiveBorder : "transparent"}`,
-        background: isActive ? UI_COLORS.tabActiveBackground : "transparent",
-        color: isActive ? UI_COLORS.tabActiveText : UI_COLORS.textMuted,
+        primaryAction: primary,
+        primaryActionBorder: primaryBorder,
+        primaryActionDisabled: primaryDisabled,
+        tabActiveBackground: tabActiveBg,
+        tabActiveBorder: tabActiveBorder,
+        tabActiveText: tabActiveText
+    };
+}
+
+function getTabButtonStyle(isActive, disabled, uiColors) {
+    return {
+        border: `1px solid ${isActive ? uiColors.tabActiveBorder : "transparent"}`,
+        background: isActive ? uiColors.tabActiveBackground : "transparent",
+        color: isActive ? uiColors.tabActiveText : STATIC_COLORS.textMuted,
         borderRadius: 8,
         padding: "7px 14px",
         lineHeight: 1.2,
@@ -231,6 +245,9 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
             setLoading(false);
         }
     };
+    const themeColor = getThemeColor();
+    const uiColors = { ...STATIC_COLORS, ...getThemeUIColors(themeColor) };
+
     const isSuccessMessage = message.includes("成功");
     const modeText = tab === "login" ? "登录已有账号" : "注册新账号";
     const modeHint = tab === "login"
@@ -246,14 +263,14 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
         boxSizing: "border-box",
         padding: "9px 10px",
         borderRadius: 8,
-        border: `1px solid ${UI_COLORS.border}`,
-        background: UI_COLORS.inputBackground
+        border: `1px solid ${uiColors.border}`,
+        background: uiColors.inputBackground
     };
     const labelStyle = {
         display: "block",
         marginBottom: 6,
         fontSize: 13,
-        color: UI_COLORS.textMuted
+        color: uiColors.textMuted
     };
 
     return (
@@ -266,21 +283,21 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                 width: "min(420px, calc(100vw - 32px))",
                 maxHeight: "calc(var(--app-height, 100vh) - 32px)",
                 overflowY: "auto",
-                background: UI_COLORS.panelBackground,
+                background: uiColors.panelBackground,
                 padding: 18,
                 borderRadius: 8,
                 boxShadow: "0 6px 24px rgba(0,0,0,0.25)"
             }}
         >
-            <h2 id="auth-modal-title" style={{ margin: "0 0 10px 0", fontSize: 20, color: UI_COLORS.textStrong }}>账号登录</h2>
+            <h2 id="auth-modal-title" style={{ margin: "0 0 10px 0", fontSize: 20, color: uiColors.textStrong }}>账号登录</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                <div style={{ display: "inline-flex", gap: 4, padding: 4, borderRadius: 10, border: `1px solid ${UI_COLORS.border}`, background: UI_COLORS.tabGroupBackground }}>
+                <div style={{ display: "inline-flex", gap: 4, padding: 4, borderRadius: 10, border: `1px solid ${uiColors.border}`, background: uiColors.tabGroupBackground }}>
                     <Button
                         type="button"
                         aria-pressed={tab === "login"}
                         disabled={loading}
                         onClick={() => switchTab("login")}
-                        style={getTabButtonStyle(tab === "login", loading)}
+                        style={getTabButtonStyle(tab === "login", loading, uiColors)}
                     >
                         登录
                     </Button>
@@ -289,7 +306,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         aria-pressed={tab === "register"}
                         disabled={loading}
                         onClick={() => switchTab("register")}
-                        style={getTabButtonStyle(tab === "register", loading)}
+                        style={getTabButtonStyle(tab === "register", loading, uiColors)}
                     >
                         注册
                     </Button>
@@ -299,15 +316,15 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         type="button"
                         disabled={loading}
                         onClick={handleClose}
-                        style={{ border: `1px solid ${UI_COLORS.border}`, borderRadius: 8, padding: "7px 10px", color: UI_COLORS.textMuted, background: UI_COLORS.panelBackground }}
+                        style={{ border: `1px solid ${uiColors.border}`, borderRadius: 8, padding: "7px 10px" }}
                     >
                         关闭
                     </Button>
                 </div>
             </div>
 
-            <p style={{ margin: "0 0 12px 0", fontSize: 13, color: UI_COLORS.textMuted }}>
-                当前操作：<strong style={{ color: UI_COLORS.textStrong }}>{modeText}</strong>。{modeHint}
+            <p style={{ margin: "0 0 12px 0", fontSize: 13, color: uiColors.textMuted }}>
+                当前操作：<strong style={{ color: uiColors.textStrong }}>{modeText}</strong>。{modeHint}
             </p>
 
             {tab === "login" ? (
@@ -345,12 +362,9 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             marginTop: 14,
                             padding: "10px 12px",
                             borderRadius: 8,
-                            border: `1px solid ${loading ? UI_COLORS.primaryActionDisabled : UI_COLORS.primaryActionBorder}`,
-                            background: loading ? UI_COLORS.primaryActionDisabled : UI_COLORS.primaryAction,
-                            color: "#fff",
+                            border: `1px solid ${uiColors.primaryActionBorder}`,
                             fontWeight: 700,
-                            letterSpacing: "0.02em",
-                            cursor: loading ? "not-allowed" : "pointer"
+                            letterSpacing: "0.02em"
                         }}
                     >
                         {submitButtonText}
@@ -358,7 +372,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                 </form>
             ) : registerStep === "qrcode" ? (
                 <div style={{ textAlign: 'center' }}>
-                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: UI_COLORS.textStrong, lineHeight: 1.6 }}>
+                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: uiColors.textStrong, lineHeight: 1.6 }}>
                         请使用 QQ 扫描下方二维码加入群聊，<br />在群内获取邀请码后再继续注册。
                     </p>
                     <img
@@ -369,11 +383,11 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             height: 200,
                             display: 'block',
                             margin: '0 auto 16px auto',
-                            border: `1px solid ${UI_COLORS.border}`,
+                            border: `1px solid ${uiColors.border}`,
                             borderRadius: 8
                         }}
                     />
-                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: UI_COLORS.textStrong, lineHeight: 1.6 }}>
+                    <p style={{ margin: "0 0 12px 0", fontSize: 14, color: uiColors.textStrong, lineHeight: 1.6 }}>
                         东方饭联地图反馈群：994716945
                     </p>
                     <Button
@@ -383,12 +397,9 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         style={{
                             padding: "10px 12px",
                             borderRadius: 8,
-                            border: `1px solid ${UI_COLORS.primaryActionBorder}`,
-                            background: UI_COLORS.primaryAction,
-                            color: "#fff",
+                            border: `1px solid ${uiColors.primaryActionBorder}`,
                             fontWeight: 700,
-                            letterSpacing: "0.02em",
-                            cursor: "pointer"
+                            letterSpacing: "0.02em"
                         }}
                     >
                         已获取邀请码，继续注册
@@ -436,7 +447,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                                     cursor: 'pointer',
                                     padding: 4,
                                     lineHeight: 0,
-                                    color: UI_COLORS.textMuted,
+                                    color: uiColors.textMuted,
                                     fontSize: 20
                                 }}
                             >
@@ -474,7 +485,7 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                                     cursor: 'pointer',
                                     padding: 4,
                                     lineHeight: 0,
-                                    color: UI_COLORS.textMuted,
+                                    color: uiColors.textMuted,
                                     fontSize: 20
                                 }}
                             >
@@ -516,12 +527,9 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                             marginTop: 14,
                             padding: "10px 12px",
                             borderRadius: 8,
-                            border: `1px solid ${loading ? UI_COLORS.primaryActionDisabled : UI_COLORS.primaryActionBorder}`,
-                            background: loading ? UI_COLORS.primaryActionDisabled : UI_COLORS.primaryAction,
-                            color: "#fff",
+                            border: `1px solid ${uiColors.primaryActionBorder}`,
                             fontWeight: 700,
-                            letterSpacing: "0.02em",
-                            cursor: loading ? "not-allowed" : "pointer"
+                            letterSpacing: "0.02em"
                         }}
                     >
                         {submitButtonText}
@@ -538,8 +546,8 @@ export default function AuthPage({ backendUrl, onLoginSuccess, onClose }) {
                         padding: "9px 11px",
                         borderRadius: 8,
                         border: `1px solid ${isSuccessMessage ? "#bfe5bf" : "#ffc7cf"}`,
-                        color: isSuccessMessage ? UI_COLORS.successText : UI_COLORS.errorText,
-                        background: isSuccessMessage ? UI_COLORS.successBackground : UI_COLORS.errorBackground,
+                        color: isSuccessMessage ? uiColors.successText : uiColors.errorText,
+                        background: isSuccessMessage ? uiColors.successBackground : uiColors.errorBackground,
                         overflowWrap: "anywhere",
                         whiteSpace: "pre-wrap"
                     }}

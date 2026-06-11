@@ -5,6 +5,7 @@ import TextArea from './TextArea';
 import PlaceImageInputs from '../map/PlaceImageInputs';
 import useDarkMode from '../utils/useDarkMode';
 import ScrollableView from './ScrollableView';
+import { getThemeColor } from '../utils/theme';
 
 const CATEGORY_DATA = [
     { group: '中餐厅', items: ['中式素菜馆', '清真菜馆', '本帮菜', '东北菜', '云贵菜', '北京菜', '台湾菜', '川菜', '徽菜', '鲁菜', '粤菜', '苏菜', '浙菜', '鄂菜', '湘菜', '闽南菜', '火锅店', '闽北菜', '西北菜'] },
@@ -34,6 +35,7 @@ export default function ManagePanel({
 
     if (!selectedPlace) return null;
     const dark = useDarkMode();
+    const themeColor = getThemeColor() || '#3b82f6';
 
     const toggleCategory = (opt) => {
         const catStr = manageEdit.category || '';
@@ -59,7 +61,7 @@ export default function ManagePanel({
         if (!isSelected) return dark ? '#334155' : '#f1f5f9';
         if (group === '休闲餐饮店') return '#0d9e63';
         if (group === '避雷') return '#9e3d0d';
-        return '#0d7a9e';
+        return themeColor;
     };
 
     return (
@@ -134,7 +136,7 @@ export default function ManagePanel({
                                                                 cursor: 'pointer',
                                                                 background: getTagBackground(group.group, isSelected),
                                                                 color: isSelected ? '#fff' : (dark ? '#e2e8f0' : '#333'),
-                                                                border: `1px solid ${isSelected ? '#2563eb' : (dark ? '#475569' : '#cbd5e1')}`,
+                                                                border: `1px solid ${isSelected ? themeColor : (dark ? '#475569' : '#cbd5e1')}`,
                                                                 flex: '0 0 auto'
                                                             }}
                                                         >

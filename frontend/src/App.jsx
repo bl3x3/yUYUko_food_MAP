@@ -14,7 +14,7 @@ import { AuthProvider } from "./AuthContext";
 import BanNotice from "./components/BanNotice";
 import { TipsProvider } from "./components/Tips";
 import { ConfirmProvider } from "./components/Confirm";
-import { applyDarkMode, applyThemeColor } from "./utils/theme";
+import { applyDarkMode, applyThemeColors, resolveThemePrimary, resolveThemeSecondary } from "./utils/theme";
 import useDarkMode from './utils/useDarkMode';
 import { DinnerCreatePage, DinnerDetailPage, DinnerListPage, isDinnerPath, parseDinnerIdFromPath } from './DinnerPages';
 import { getNoticeColorOption } from './utils/noticeColors';
@@ -139,7 +139,7 @@ export default function App() {
             try { localStorage.removeItem('map_settings'); } catch (e) { }
             // ensure dark mode off and theme color cleared
             try { applyDarkMode(false); } catch (e) { }
-            try { applyThemeColor(''); } catch (e) { }
+            try { applyThemeColors('', ''); } catch (e) { }
             // inform map to apply light default style
             try { document.dispatchEvent(new CustomEvent('mapstylechange', { detail: { map_style_light: 'amap://styles/normal' } })); } catch (e) { }
         } catch (e) { /* ignore */ }
@@ -154,14 +154,12 @@ export default function App() {
             if (raw) {
                 const ms = JSON.parse(raw);
                 if (ms && typeof ms.dark_mode !== 'undefined') applyDarkMode(!!ms.dark_mode);
-                // Only apply saved theme color on mount when:
-                // - there is a token (likely the user's own settings), OR
-                // - the saved settings explicitly enable dark_mode, OR
-                // - the page is already in dark mode (so a theme color makes sense).
                 try {
                     const pageIsDark = document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
                     const shouldApplyThemeColor = !!token || !!(ms && ms.dark_mode) || pageIsDark;
-                    if (ms && typeof ms.theme_color !== 'undefined' && shouldApplyThemeColor && ms.theme_color) applyThemeColor(ms.theme_color);
+                    if (shouldApplyThemeColor) {
+                        applyThemeColors(resolveThemePrimary(ms), resolveThemeSecondary(ms));
+                    }
                 } catch (e) { /* ignore */ }
             }
         } catch (e) { }
@@ -204,7 +202,7 @@ export default function App() {
         try {
             if (user && user.map_settings) {
                 if (typeof user.map_settings.dark_mode !== 'undefined') applyDarkMode(!!user.map_settings.dark_mode);
-                if (typeof user.map_settings.theme_color !== 'undefined') applyThemeColor(user.map_settings.theme_color || '');
+                applyThemeColors(resolveThemePrimary(user.map_settings), resolveThemeSecondary(user.map_settings));
                 return;
             }
 
@@ -213,12 +211,13 @@ export default function App() {
             if (raw) {
                 const ms = JSON.parse(raw);
                 if (ms && typeof ms.dark_mode !== 'undefined') applyDarkMode(!!ms.dark_mode);
-                if (ms && typeof ms.theme_color !== 'undefined') applyThemeColor(ms.theme_color || '');
+                applyThemeColors(resolveThemePrimary(ms), resolveThemeSecondary(ms));
                 return;
             }
 
-            // default: remove dark mode
+            // default: remove dark mode, use defaults
             applyDarkMode(false);
+            applyThemeColors(resolveThemePrimary(null), resolveThemeSecondary(null));
         } catch (e) { /* ignore */ }
     }, [user]);
 
@@ -262,7 +261,7 @@ export default function App() {
                     setShowAuth(true);
                     // reset theme & map style when user logged out in another tab
                     try { applyDarkMode(false); } catch (err) { }
-                    try { applyThemeColor(''); } catch (err) { }
+                    try { applyThemeColors('', ''); } catch (err) { }
                     try { document.dispatchEvent(new CustomEvent('mapstylechange', { detail: { map_style_light: 'amap://styles/normal' } })); } catch (err) { }
                     if (pathname === '/admin') goPath('/');
                     return;

@@ -155,6 +155,7 @@ export default function MapUI(props) {
         searching,
         tipText,
         customThemeColor,
+        customThemeSecondary,
         authPending,
         handleLocateMe,
         locating,
@@ -443,7 +444,7 @@ export default function MapUI(props) {
                 <div style={{ padding: '4px 12px', fontSize: 12, color: dark ? '#9ca3af' : '#6b7280', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
                     <span>{title}</span>
                     {hasMore && onMore && (
-                        <span onClick={onMore} style={{ cursor: 'pointer', color: customThemeColor }}>查看更多</span>
+                        <span onClick={onMore} style={{ cursor: 'pointer', color: customThemeSecondary || customThemeColor }}>查看更多</span>
                     )}
                 </div>
                 {items.map(item => (
@@ -635,7 +636,7 @@ export default function MapUI(props) {
                                     background: customThemeColor,
                                     color: '#fff',
                                     border: 'none',
-                                    boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                    boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                     transition: 'background 180ms ease, transform 220ms ease',
                                     cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
                                     opacity: (!mapReady || authPending) ? 0.6 : 1
@@ -671,7 +672,7 @@ export default function MapUI(props) {
                                         background: customThemeColor,
                                         color: '#fff',
                                         border: 'none',
-                                        boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                        boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                         transition: 'background 180ms ease, transform 220ms ease',
                                         cursor: 'pointer'
                                     }}
@@ -706,7 +707,7 @@ export default function MapUI(props) {
                                         background: customThemeColor,
                                         color: '#fff',
                                         border: 'none',
-                                        boxShadow: '0 4px 12px rgba(0,47,167,0.2)',
+                                        boxShadow: `0 4px 12px ${hexToRgba(customThemeColor, 0.2)}`,
                                         transition: 'background 180ms ease, transform 220ms ease',
                                         cursor: (!mapReady || authPending) ? 'not-allowed' : 'pointer',
                                         opacity: (!mapReady || authPending) ? 0.6 : 1

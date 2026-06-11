@@ -10,7 +10,7 @@ import { useConfirm } from "./components/Confirm";
 import Tooltip from './components/Tooltip';
 import Button from './components/Button';
 import useDarkMode from './utils/useDarkMode';
-import { applyThemeColor } from './utils/theme';
+import { applyThemeColors, resolveThemePrimary, resolveThemeSecondary } from './utils/theme';
 
 const DEFAULT_CENTER = MapUtils.DEFAULT_CENTER;
 const DEFAULT_ZOOM = MapUtils.DEFAULT_ZOOM;
@@ -155,27 +155,30 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         }, durationMs);
     };
 
-    const DEFAULT_THEME_COLOR = 'rgb(248, 167, 211)';
-    const [customThemeColor, setCustomThemeColor] = useState(DEFAULT_THEME_COLOR);
+    const [customThemeColor, setCustomThemeColor] = useState(() => resolveThemePrimary(null));
+    const [customThemeSecondary, setCustomThemeSecondary] = useState(() => resolveThemeSecondary(null));
+
+    const applyEffectiveTheme = (mapSettings) => {
+        const primary = resolveThemePrimary(mapSettings);
+        const secondary = resolveThemeSecondary(mapSettings);
+        setCustomThemeColor(primary);
+        setCustomThemeSecondary(secondary);
+        try { applyThemeColors(primary, secondary); } catch (e) { }
+    };
 
     useEffect(() => {
         try {
-            let color = null;
+            let ms = null;
             if (currentUser && currentUser.map_settings) {
-                color = currentUser.map_settings.theme_color || null;
+                ms = currentUser.map_settings;
             }
-            if (!color) {
+            if (!ms || !ms.theme_color) {
                 try {
                     const raw = window.localStorage.getItem('map_settings');
-                    if (raw) {
-                        const ms = JSON.parse(raw);
-                        if (ms && ms.theme_color) color = ms.theme_color;
-                    }
+                    if (raw) ms = JSON.parse(raw);
                 } catch (e) { }
             }
-            if (color) setCustomThemeColor(color);
-            else setCustomThemeColor(DEFAULT_THEME_COLOR);
-            try { applyThemeColor(color || DEFAULT_THEME_COLOR); } catch (e) { }
+            applyEffectiveTheme(ms);
         } catch (e) { }
     }, [currentUser]);
 
@@ -183,8 +186,27 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         const onThemeChange = (e) => {
             try {
                 const detail = (e && e.detail) ? e.detail : null;
-                if (detail && typeof detail.color !== 'undefined') {
-                    setCustomThemeColor(detail.color || DEFAULT_THEME_COLOR);
+                if (detail) {
+                    if (typeof detail.color !== 'undefined') {
+                        setCustomThemeColor(detail.color || resolveThemePrimary(null));
+                    }
+                    if (typeof detail.secondary !== 'undefined') {
+                        setCustomThemeSecondary(detail.secondary || resolveThemeSecondary(null));
+                    }
+                    // Dark mode toggled — re-resolve defaults if user hasn't customized
+                    if (typeof detail.dark !== 'undefined') {
+                        let ms = null;
+                        try {
+                            const raw = window.localStorage.getItem('map_settings');
+                            if (raw) ms = JSON.parse(raw);
+                        } catch (ex) { }
+                        if (!ms || !ms.theme_color) {
+                            setCustomThemeColor(resolveThemePrimary(ms));
+                        }
+                        if (!ms || !ms.theme_color_secondary) {
+                            setCustomThemeSecondary(resolveThemeSecondary(ms));
+                        }
+                    }
                 }
             } catch (err) { }
         };
@@ -1387,6 +1409,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 searching={searching}
                 tipText={tipText}
                 customThemeColor={customThemeColor}
+                customThemeSecondary={customThemeSecondary}
                 authPending={authPending}
                 handleLocateMe={handleLocateMe}
                 locating={locating}
