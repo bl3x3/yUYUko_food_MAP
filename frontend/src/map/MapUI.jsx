@@ -1036,7 +1036,10 @@ export default function MapUI(props) {
                                     const url = buildPlaceShareUrl(selectedPlace);
                                     if (navigator.share) {
                                         setShareOpen(false);
-                                        navigator.share({ title: selectedPlace.name, text: `${selectedPlace.name} - 东方饭联地图`, url }).catch(() => {});
+                                        const shareText = selectedPlace.description
+                                            ? `${selectedPlace.name} · ${selectedPlace.category || ''} · ${selectedPlace.description} — 上东方饭联地图发现更多美食`
+                                            : `${selectedPlace.name}${selectedPlace.category ? ' · ' + selectedPlace.category : ''} — 东方饭联地图，与饭搭子发现身边好店`;
+                                        navigator.share({ title: selectedPlace.name, text: shareText, url }).catch(() => {});
                                     } else {
                                         copyToClipboard(url).then(ok => {
                                             if (ok && showTip) showTip('分享链接已复制到剪贴板');
@@ -1070,7 +1073,8 @@ export default function MapUI(props) {
                                     const amapUrl = buildAmapShareUrl(selectedPlace);
                                     if (navigator.share) {
                                         setShareOpen(false);
-                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: `导航到 ${selectedPlace.name}`, url: amapUrl }).catch(() => {});
+                                        const amapShareText = `导航到 ${selectedPlace.name}${selectedPlace.address ? ' · ' + selectedPlace.address : ''} — 使用高德地图一键导航`;
+                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: amapShareText, url: amapUrl }).catch(() => {});
                                     } else {
                                         copyToClipboard(amapUrl).then(ok => {
                                             if (ok && showTip) showTip('高德导航链接已复制到剪贴板');

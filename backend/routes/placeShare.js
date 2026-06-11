@@ -49,7 +49,7 @@ function buildOgDescription(place) {
     if (place?.category) parts.push(place.category);
     if (place?.description) parts.push(place.description);
     const base = parts.join(" · ");
-    // QQ 爬虫忽略 <30 字符的 og:description 并回退为显示 URL，不足时补站点上下文
+    // QQ 爬虫忽略过短的描述并回退为显示 URL，不足时补站点上下文
     if (base.length >= 30) return base;
     const name = place?.name;
     const suffix = "上东方饭联地图，与饭搭子一起发现身边的美食好店，从此吃饭不踩雷";
@@ -57,25 +57,30 @@ function buildOgDescription(place) {
     return suffix;
 }
 
-function getOgImageUrl(place, frontendBase) {
+/**
+ * 构建 og:image / itemprop="image" 用的图片绝对 URL
+ * @param {object} place - 地点数据
+ * @param {string} baseUrl - 后端基础 URL（协议+主机，如 https://cn.dinnerparty.cc）
+ */
+function getOgImageUrl(place, baseUrl) {
     // 优先使用地点的第一张外观图片
     try {
         const exteriorImages = JSON.parse(place?.exterior_images || '[]');
         if (Array.isArray(exteriorImages) && exteriorImages.length > 0) {
             const img = exteriorImages[0];
             if (img && typeof img === 'string') {
-                // 相对路径补全为绝对路径
-                if (img.startsWith('/')) return `${frontendBase}${img}`;
+                // 相对路径补全为绝对路径（uploads 由后端 serve）
+                if (img.startsWith('/')) return `${baseUrl}${img}`;
                 if (img.startsWith('http')) return img;
-                return `${frontendBase}/${img}`;
+                return `${baseUrl}/${img}`;
             }
         }
     } catch (e) { /* ignore */ }
-    // 回退：favicon
-    return `${frontendBase}/favicon.ico`;
+    // 回退：favicon（由前端 serve，确保文件存在）
+    return `${baseUrl}/favicon.ico`;
 }
 
-function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
+function renderShareHtml(place, shareUrl, frontendUrl, baseUrl, isNavShare) {
     const siteName = '东方饭联地图';
     const placeName = place.name || '地点';
 
@@ -83,9 +88,9 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     const pageTitle = truncate(`${placeName} | ${siteName}`, 65);
     // meta description: max 155 chars
     const metaDesc = truncate(buildOgDescription(place), 155);
-    // og:title: max 35 chars
+    // og:title / itemprop name: max 35 chars
     const ogTitle = truncate(placeName, 35);
-    // og:description: max 65 chars
+    // og:description / itemprop description: max 65 chars
     const ogDesc = truncate(buildOgDescription(place), 65);
 
     const safePageTitle = htmlEscape(pageTitle);
@@ -97,45 +102,42 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     const safeFrontendUrl = htmlEscape(frontendUrl);
     const safeShareUrl = htmlEscape(shareUrl);
 
-    const frontendBase = frontendUrl.replace(/\/\?.*$/, '').replace(/\/$/, '');
-    const ogImageUrl = getOgImageUrl(place, frontendBase);
+    const ogImageUrl = getOgImageUrl(place, baseUrl);
+    const safeOgImageUrl = htmlEscape(ogImageUrl);
 
     const actionLabel = isNavShare ? "打开高德地图导航" : "在地图中查看";
     const actionUrl = isNavShare ? htmlEscape(buildAmapNavUrl(place)) : safeFrontendUrl;
 
-    return `<!doctype html>
+    const safeCategory = htmlEscape(place.category || "");
+    const safeDescription = htmlEscape(place.description || "");
+    // JS 跳转目标（不含 HTML 转义，直接用于 JS 字符串）
+    const jsRedirectUrl = (isNavShare ? buildAmapNavUrl(place) : frontendUrl)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'");
+
+    return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${safePageTitle}</title>
+  <link rel="shortcut icon" href="${safeOgImageUrl}" />
+
+  <!-- 标准 meta description -->
   <meta name="description" content="${safeMetaDesc}" />
 
+  <!-- Open Graph（微信 / Facebook / Telegram 等） -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="${htmlEscape(siteName)}" />
   <meta property="og:title" content="${safeOgTitle}" />
   <meta property="og:description" content="${safeOgDesc}" />
-  <meta itemprop="description" content="${safeOgDesc}" />
   <meta property="og:url" content="${safeShareUrl}" />
-  <meta property="og:image" content="${htmlEscape(ogImageUrl)}" />
-  <meta property="og:image:width" content="600" />
-  <meta property="og:image:height" content="315" />
+  <meta property="og:image" content="${safeOgImageUrl}" />
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${safeOgTitle}" />
-  <meta name="twitter:description" content="${safeOgDesc}" />
-  <meta name="twitter:image" content="${htmlEscape(ogImageUrl)}" />
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Restaurant",
-    "name": "${safeOgTitle}",
-    "description": "${safeOgDesc}",
-    "image": "${htmlEscape(ogImageUrl)}",
-    "url": "${safeShareUrl}"
-  }
-  </script>
+  <!-- QQ / Qzone 分享卡片（腾讯自定义 itemprop 解析） -->
+  <meta itemprop="name" content="${safeOgTitle}" />
+  <meta itemprop="description" content="${safeOgDesc}" />
+  <meta itemprop="image" content="${safeOgImageUrl}" />
 
   <style>
     body { margin:0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background:#f4f7fb; color:#102a43; }
@@ -146,15 +148,23 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     .meta { color:#486581; }
     .btn { display:inline-block; margin-top:16px; background:#0f609b; color:white; text-decoration:none; padding:10px 16px; border-radius:10px; }
   </style>
+  <script>
+    // 正常浏览器自动跳转到目标页；爬虫不执行 JS，会看到完整 meta 标签
+    location.replace('${jsRedirectUrl}');
+  </script>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>${safeName}</h1>
-      <p class="meta">${safeMetaDesc}</p>
+      ${safeCategory ? `<p class="meta">🏷 ${safeCategory}</p>` : ""}
+      ${safeDescription ? `<p class="meta">${safeDescription}</p>` : ""}
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
       <a class="btn" href="${actionUrl}">${actionLabel}</a>
     </div>
+    <p style="text-align:center;color:#829ab1;margin-top:24px;font-size:14px;">
+      东方饭联地图 — 与饭搭子一起发现身边的美食好店
+    </p>
   </div>
 </body>
 </html>`;
@@ -175,24 +185,28 @@ router.get("/:id", (req, res) => {
 
         const isBot = BOT_UA_REGEX.test(req.get("user-agent") || "");
 
-        const shareUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+        const host = req.get("host") || "";
+        // req.protocol 依赖 trust proxy + X-Forwarded-Proto，若 nginx 未传则可能为 http
+        const proto = (req.get("x-forwarded-proto") || req.protocol || "https");
+        const shareUrl = `${proto}://${host}${req.originalUrl}`;
         const frontendUrl = buildFrontendPlaceUrl(req, placeId);
+        // 后端基础 URL（用于构建图片绝对路径，uploads 由后端 serve）
+        const baseUrl = `${proto}://${host}`;
+
+        // 诊断日志：帮助排查 QQ 爬虫无法解析 OG 卡片的问题
+        console.log(`[placeShare] id=${placeId} ua="${(req.get("user-agent") || "").slice(0, 80)}" isBot=${isBot} nav=${isNavShare} proto=${proto} xfwd=${req.get("x-forwarded-proto") || "-"} host=${host}`);
+
+        // 始终返回带 OG 标签的 HTML，不再使用 302 重定向。
+        // 302 会导致浏览器/客户端分享时从最终页面（SPA，无 OG 标签）提取元数据，
+        // 而爬虫也可能因为各种原因无法正确解析。现在模仿 Safari 分享方式：
+        // 始终返回含全部 meta 的 HTML，正常浏览器通过 JS 跳转到目标页面。
+        res.set("Content-Type", "text/html; charset=utf-8");
 
         if (isNavShare) {
-            const amapUrl = buildAmapNavUrl(place);
-            if (isBot) {
-                res.set("Content-Type", "text/html; charset=utf-8");
-                return res.send(renderShareHtml(place, shareUrl, frontendUrl, true));
-            }
-            return res.redirect(302, amapUrl);
+            return res.send(renderShareHtml(place, shareUrl, frontendUrl, baseUrl, true));
         }
 
-        if (isBot) {
-            res.set("Content-Type", "text/html; charset=utf-8");
-            return res.send(renderShareHtml(place, shareUrl, frontendUrl, false));
-        }
-
-        return res.redirect(302, frontendUrl);
+        return res.send(renderShareHtml(place, shareUrl, frontendUrl, baseUrl, false));
     });
 });
 
