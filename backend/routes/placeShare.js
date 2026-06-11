@@ -21,14 +21,14 @@ function buildFrontendPlaceUrl(req, id) {
     }
 
     const protocol = "https";
-    const host = req.get("host") || "";
+    const host = (req.get("host") || "").replace(/:\d+$/, "");
 
     // 本地开发
     if (/^(localhost|127\.0\.0\.1)$/i.test(host)) {
         return `${protocol}://${host}:5173${placeParam}`;
     }
 
-    // 生产环境：使用请求的实际域名
+    // 生产环境：使用请求的实际域名（已移除端口号，确保与 dinners 一致）
     return `${protocol}://${host}${placeParam}`;
 }
 
@@ -95,6 +95,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     const ogImageUrl = getOgImageUrl(place, frontendBase);
 
     const actionLabel = isNavShare ? "打开高德地图导航" : "在地图中查看";
+    const actionUrl = isNavShare ? htmlEscape(buildAmapNavUrl(place)) : safeFrontendUrl;
 
     return `<!doctype html>
 <html lang="zh-CN">
@@ -135,7 +136,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
       <h1>${safeName}</h1>
       <p class="meta">${safeMetaDesc}</p>
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
-      <div class="btn">${actionLabel}</div>
+      <a class="btn" href="${actionUrl}">${actionLabel}</a>
     </div>
   </div>
 </body>
