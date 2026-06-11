@@ -193,9 +193,6 @@ router.get("/:id", (req, res) => {
         // 确保 FRONTEND_BASE_URL 等配置也被正确使用
         const baseUrl = frontendUrl.replace(/\/\?.*$/, '').replace(/\/$/, '');
 
-        // 诊断日志
-        console.log(`[placeShare] id=${placeId} ua="${(req.get("user-agent") || "").slice(0, 80)}" isBot=${isBot} nav=${isNavShare} proto=${proto} rawHost=${rawHost} host=${host} frontendUrl=${frontendUrl} baseUrl=${baseUrl}`);
-
         // 始终返回带 OG 标签的 HTML，不再使用 302 重定向。
         // 302 会导致浏览器/客户端分享时从最终页面（SPA，无 OG 标签）提取元数据，
         // 而爬虫也可能因为各种原因无法正确解析。现在模仿 Safari 分享方式：
