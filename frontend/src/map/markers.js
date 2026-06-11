@@ -19,7 +19,7 @@ export function createMarker(map, place) {
         extData: place,
         content: buildMarkerContent(place.name, category),
         offset: INDIVIDUAL_OFFSET,
-        zIndex: 100
+        zIndex: 110
     });
     return marker;
 }
@@ -39,10 +39,11 @@ function buildMarkerContent(placeName, category) {
     const iconSrc = isThunder ? noIcon : yesIcon;
     const dark = isDarkMode();
     const labelColor = dark ? '#e5e7eb' : '#1f2937';
+    const labelBg = dark ? 'var(--theme-secondary)' : '#fff9f6';
     return `
         <div style="position:relative;width:36px;height:43px;overflow:visible;">
             <img src="${iconSrc}" style="display:block;width:36px;height:43px;position:relative;z-index:1;" draggable="false" />
-            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);z-index:2;background:var(--theme-secondary);color:${labelColor};font-size:12px;line-height:16px;padding:2px 8px;border-radius:8px;border:1px solid var(--theme-primary);border-left:3px solid var(--theme-primary);white-space:nowrap;margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);">${safeName}</div>` : ''}
+            ${safeName ? `<div style="position:absolute;top:43px;left:50%;transform:translateX(-50%);z-index:2;background:${labelBg};color:${labelColor};font-size:12px;line-height:16px;padding:2px 8px 2px 6px;border-radius:2px;border:1px solid var(--theme-primary);border-left:5px solid var(--theme-primary);white-space:nowrap;margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);">${safeName}</div>` : ''}
         </div>
     `;
 }
