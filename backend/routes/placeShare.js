@@ -111,7 +111,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
   <title>${safePageTitle}</title>
   <meta name="description" content="${safeMetaDesc}" />
 
-  <meta property="og:type" content="article" />
+  <meta property="og:type" content="website" />
   <meta property="og:site_name" content="${htmlEscape(siteName)}" />
   <meta property="og:title" content="${safeOgTitle}" />
   <meta property="og:description" content="${safeOgDesc}" />
@@ -125,6 +125,17 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
   <meta name="twitter:title" content="${safeOgTitle}" />
   <meta name="twitter:description" content="${safeOgDesc}" />
   <meta name="twitter:image" content="${htmlEscape(ogImageUrl)}" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": "${safeOgTitle}",
+    "description": "${safeOgDesc}",
+    "image": "${htmlEscape(ogImageUrl)}",
+    "url": "${safeShareUrl}"
+  }
+  </script>
 
   <style>
     body { margin:0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background:#f4f7fb; color:#102a43; }
@@ -142,7 +153,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
       <h1>${safeName}</h1>
       <p class="meta">${safeMetaDesc}</p>
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
-      <div class="btn">${actionLabel}</div>
+      <a class="btn" href="${actionUrl}">${actionLabel}</a>
     </div>
   </div>
 </body>
@@ -164,7 +175,7 @@ router.get("/:id", (req, res) => {
 
         const isBot = BOT_UA_REGEX.test(req.get("user-agent") || "");
 
-        const shareUrl = buildFrontendPlaceUrl(req, placeId).replace(/\/\?.*$/, '') + req.originalUrl;
+        const shareUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
         const frontendUrl = buildFrontendPlaceUrl(req, placeId);
 
         if (isNavShare) {
