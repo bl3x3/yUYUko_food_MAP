@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { db } = require("../db");
 
-const BOT_UA_REGEX = /bot|spider|crawler|facebookexternalhit|twitterbot|slack|qzone|qq|MicroMessenger|MQQBrowser/i;
+const BOT_UA_REGEX = /bot|spider|crawler|facebookexternalhit|twitterbot|slack|qzone|qq|MicroMessenger|MQQBrowser|WeChat|WxWork|WhatsApp|Line|TelegramBot|Discordbot|DingTalk|Lark|Feishu|Bytedance|Tencent|YisouSpider|Sogou|360Spider|Bytespider|PetalBot/i;
 
 function htmlEscape(text) {
     return String(text || "")
@@ -95,7 +95,6 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
     const ogImageUrl = getOgImageUrl(place, frontendBase);
 
     const actionLabel = isNavShare ? "打开高德地图导航" : "在地图中查看";
-    const actionUrl = isNavShare ? htmlEscape(buildAmapNavUrl(place)) : safeFrontendUrl;
 
     return `<!doctype html>
 <html lang="zh-CN">
@@ -109,6 +108,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
   <meta property="og:site_name" content="${htmlEscape(siteName)}" />
   <meta property="og:title" content="${safeOgTitle}" />
   <meta property="og:description" content="${safeOgDesc}" />
+  <meta itemprop="description" content="${safeOgDesc}" />
   <meta property="og:url" content="${safeShareUrl}" />
   <meta property="og:image" content="${htmlEscape(ogImageUrl)}" />
   <meta property="og:image:width" content="600" />
@@ -135,7 +135,7 @@ function renderShareHtml(place, shareUrl, frontendUrl, isNavShare) {
       <h1>${safeName}</h1>
       <p class="meta">${safeMetaDesc}</p>
       ${safeAddress ? `<p>📍 ${safeAddress}</p>` : ""}
-      <a class="btn" href="${actionUrl}">${actionLabel}</a>
+      <div class="btn">${actionLabel}</div>
     </div>
   </div>
 </body>

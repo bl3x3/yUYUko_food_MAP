@@ -884,7 +884,9 @@ export default function MapUI(props) {
                                             onClick={() => setShareOpen(true)}
                                             style={{ background: 'transparent', border: dark ? '1px solid rgba(255,255,255,0.06)' : '2px solid rgba(0,0,0,0.1)', color: dark ? '#e5e7eb' : undefined, padding: '6px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
-                                            分享
+                                            <span className="material-symbols-outlined" style={{ display: 'inline-block', fontSize: 20 }}>
+                                                share
+                                            </span>
                                         </Button>
                                     </Tooltip>
                                     {/* 评论功能暂不开放，待敏感词机制完善后再开放 */}
