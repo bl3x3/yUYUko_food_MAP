@@ -60,23 +60,21 @@ function buildOgDescription(place) {
 /**
  * 构建 og:image / itemprop="image" 用的图片绝对 URL
  * @param {object} place - 地点数据
- * @param {string} baseUrl - 后端基础 URL（协议+主机，如 https://cn.dinnerparty.cc）
+ * @param {string} baseUrl - 前端基础 URL（协议+主机，与 frontendUrl 同源）
+ * @returns {string}
  */
 function getOgImageUrl(place, baseUrl) {
-    // 优先使用地点的第一张外观图片
     try {
         const exteriorImages = JSON.parse(place?.exterior_images || '[]');
         if (Array.isArray(exteriorImages) && exteriorImages.length > 0) {
             const img = exteriorImages[0];
             if (img && typeof img === 'string') {
-                // 相对路径补全为绝对路径（uploads 由后端 serve）
                 if (img.startsWith('/')) return `${baseUrl}${img}`;
                 if (img.startsWith('http')) return img;
                 return `${baseUrl}/${img}`;
             }
         }
     } catch (e) { /* ignore */ }
-    // 回退：favicon（由前端 serve，确保文件存在）
     return `${baseUrl}/favicon.ico`;
 }
 
@@ -185,16 +183,18 @@ router.get("/:id", (req, res) => {
 
         const isBot = BOT_UA_REGEX.test(req.get("user-agent") || "");
 
-        const host = req.get("host") || "";
-        // req.protocol 依赖 trust proxy + X-Forwarded-Proto，若 nginx 未传则可能为 http
+        const rawHost = req.get("host") || "";
+        // 去掉端口号：与 buildFrontendPlaceUrl 保持一致，确保 og:image 等 URL 使用标准端口（443）
+        const host = rawHost.replace(/:\d+$/, "");
         const proto = (req.get("x-forwarded-proto") || req.protocol || "https");
         const shareUrl = `${proto}://${host}${req.originalUrl}`;
         const frontendUrl = buildFrontendPlaceUrl(req, placeId);
-        // 后端基础 URL（用于构建图片绝对路径，uploads 由后端 serve）
-        const baseUrl = `${proto}://${host}`;
+        // 从 frontendUrl 派生 baseUrl，与旧逻辑完全一致，
+        // 确保 FRONTEND_BASE_URL 等配置也被正确使用
+        const baseUrl = frontendUrl.replace(/\/\?.*$/, '').replace(/\/$/, '');
 
-        // 诊断日志：帮助排查 QQ 爬虫无法解析 OG 卡片的问题
-        console.log(`[placeShare] id=${placeId} ua="${(req.get("user-agent") || "").slice(0, 80)}" isBot=${isBot} nav=${isNavShare} proto=${proto} xfwd=${req.get("x-forwarded-proto") || "-"} host=${host}`);
+        // 诊断日志
+        console.log(`[placeShare] id=${placeId} ua="${(req.get("user-agent") || "").slice(0, 80)}" isBot=${isBot} nav=${isNavShare} proto=${proto} rawHost=${rawHost} host=${host} frontendUrl=${frontendUrl} baseUrl=${baseUrl}`);
 
         // 始终返回带 OG 标签的 HTML，不再使用 302 重定向。
         // 302 会导致浏览器/客户端分享时从最终页面（SPA，无 OG 标签）提取元数据，
