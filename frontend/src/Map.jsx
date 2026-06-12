@@ -546,7 +546,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 setPopupPoint(point);
             };
             handleUpdateLabels = () => {
-                const currentPlaces = searchResultsRef.current != null ? searchResultsRef.current : placesRef.current;
+                const isSearch = searchResultsRef.current != null;
+                const currentPlaces = isSearch ? searchResultsRef.current : placesRef.current;
                 const visibleIds = visibleIndividualIdsRef.current;
                 const container = containerRef.current;
                 if (!currentPlaces || currentPlaces.length === 0) {
@@ -561,7 +562,8 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 const labels = [];
                 for (const p of currentPlaces) {
                     if (!p.name || p.isMarked === false) continue;
-                    if (visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
+                    // 搜索模式下不依赖聚类 visibleIds，确保所有搜索结果标签都显示
+                    if (!isSearch && visibleIds.size > 0 && !visibleIds.has(p.id)) continue;
                     const point = lngLatToContainerPoint({ longitude: p.longitude, latitude: p.latitude });
                     if (!point) continue;
                     const halfW = Math.min((p.name || '').length * 7 + 12, maxHalfW);
