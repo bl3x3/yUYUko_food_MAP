@@ -148,27 +148,19 @@ def fetch_html_with_selenium():
         driver.quit()
 
 def sync_to_database(conn, scraped_qqs):
-    """同步逻辑与原来保持一致"""
+    """同步逻辑：仅新增，不删除退群记录"""
     cursor = conn.cursor()
     cursor.execute("SELECT qq FROM QQWhitelist")
     existing_qqs = set(row[0] for row in cursor.fetchall())
-    
+
     new_qqs = set(scraped_qqs)
-    
+
     if not new_qqs:
         print("警告：本次未抓取到任何 QQ 号，跳过同步。")
         return
 
     to_add = new_qqs - existing_qqs
-    to_delete = existing_qqs - new_qqs
-    
-    if to_delete:
-        cursor.executemany(
-            "DELETE FROM QQWhitelist WHERE qq = ?", 
-            [(qq,) for qq in to_delete]
-        )
-        print(f"[-] 删除了 {len(to_delete)} 个已退群记录。")
-        
+
     if to_add:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.executemany(
@@ -176,10 +168,9 @@ def sync_to_database(conn, scraped_qqs):
             [(qq, current_time) for qq in to_add]
         )
         print(f"[+] 新增了 {len(to_add)} 个新成员记录。")
-        
-    if not to_add and not to_delete:
-        print("[=] 群成员无变化，数据库无需更新。")
-        
+    else:
+        print("[=] 无新成员，数据库无需更新。")
+
     conn.commit()
 
 def job():
