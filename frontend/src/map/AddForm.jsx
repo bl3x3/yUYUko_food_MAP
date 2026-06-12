@@ -14,6 +14,7 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
     const [description, setDescription] = useState(defaultDescription);
     const [exteriorImages, setExteriorImages] = useState([]);
     const [menuImages, setMenuImages] = useState([]);
+    const [perPersonCost, setPerPersonCost] = useState('');
     const showTip = useTips();
     const dark = useDarkMode();
     const themeColor = getThemeColor() || '#3b82f6';
@@ -44,6 +45,7 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
             name,
             category,
             description,
+            per_person_cost: perPersonCost ? parseInt(perPersonCost, 10) : null,
             exterior_images: exteriorImages.filter(Boolean),
             menu_images: menuImages.filter(Boolean),
             longitude: defaultPos[0],
@@ -153,6 +155,18 @@ export default function AddForm({ backendUrl, token, defaultPos, defaultName = "
             </div>
             <div style={{ marginTop: 8 }}>
                 <TextInput placeholder="描述" value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: "100%" }} />
+            </div>
+            <div style={{ marginTop: 8 }}>
+                <TextInput
+                    placeholder="人均价格（元，可选）"
+                    value={perPersonCost}
+                    onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '' || /^[1-9]\d*$/.test(v)) setPerPersonCost(v);
+                    }}
+                    style={{ width: "100%" }}
+                    inputMode="numeric"
+                />
             </div>
             <ScrollableView style={{ marginTop: 8, maxHeight: "200px", overflowY: "auto" }}>
                 <PlaceImageInputs backendUrl={backendUrl} token={token} images={exteriorImages} setImages={setExteriorImages} label="外观/招牌图片（可选）" />

@@ -758,7 +758,7 @@ export default function MapUI(props) {
                 <div style={{ position: "absolute", right: 8, top: 8, zIndex: 2000 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
                         <div style={{ padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: "#fff9f6", borderRadius: "12px", fontSize: "12px", pointerEvents: "none", userSelect: "none" }}>
-                            v1.7.1
+                            v1.8.1
                         </div>
 
                         {!pickerMode && (
@@ -893,7 +893,10 @@ export default function MapUI(props) {
                                 );
                             })()}
                         </div>
-                        <div style={{ marginTop: 6, color: dark ? '#9ca3af' : '#666', fontSize: 12 }}>分类: {selectedPlace.category || "-"}</div>
+                        <div style={{ marginTop: 6, color: dark ? '#9ca3af' : '#666', fontSize: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span>分类: {selectedPlace.category || "-"}</span>
+                            {selectedPlace.per_person_cost != null && <span>人均 ¥{selectedPlace.per_person_cost}</span>}
+                        </div>
 
                         {!pickerMode && (
                             <div style={{ marginTop: 8, color: dark ? '#9ca3af' : '#888', fontSize: 12 }}>
@@ -1052,7 +1055,7 @@ export default function MapUI(props) {
                     justifyContent: 'center',
                     padding: 16
                 }}
-                onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
+                    onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
                 >
                     <div style={{
                         width: 'min(420px, 92vw)',
@@ -1085,7 +1088,7 @@ export default function MapUI(props) {
                                         const shareText = selectedPlace.description
                                             ? `${selectedPlace.name} · ${selectedPlace.category || ''} · ${selectedPlace.description} — 上东方饭联地图发现更多美食`
                                             : `${selectedPlace.name}${selectedPlace.category ? ' · ' + selectedPlace.category : ''} — 东方饭联地图，与饭搭子发现身边好店`;
-                                        navigator.share({ title: selectedPlace.name, text: shareText, url }).catch(() => {});
+                                        navigator.share({ title: selectedPlace.name, text: shareText, url }).catch(() => { });
                                     } else {
                                         copyToClipboard(url).then(ok => {
                                             if (ok && showTip) showTip('分享链接已复制到剪贴板');
@@ -1120,7 +1123,7 @@ export default function MapUI(props) {
                                     if (navigator.share) {
                                         setShareOpen(false);
                                         const amapShareText = `导航到 ${selectedPlace.name}${selectedPlace.address ? ' · ' + selectedPlace.address : ''} — 使用高德地图一键导航`;
-                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: amapShareText, url: amapUrl }).catch(() => {});
+                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: amapShareText, url: amapUrl }).catch(() => { });
                                     } else {
                                         copyToClipboard(amapUrl).then(ok => {
                                             if (ok && showTip) showTip('高德导航链接已复制到剪贴板');

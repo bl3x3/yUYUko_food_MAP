@@ -97,8 +97,22 @@ router.get("/:id", (req, res) => {
 
 // 添加地点
 router.post("/", requireAuth, (req, res) => {
-    const { name, description, latitude, longitude, category, exterior_images, menu_images } = req.body;
+    const { name, description, latitude, longitude, category, exterior_images, menu_images, per_person_cost } = req.body;
     const creatorId = req.user.id;
+
+    // 验证人均价格：可选，但若提供则需为正整数
+    const normalizedPerPersonCost = (() => {
+        if (per_person_cost == null || per_person_cost === '' || per_person_cost === undefined) return null;
+        const n = parseInt(per_person_cost, 10);
+        if (!Number.isInteger(n) || n <= 0) {
+            return { error: "人均价格需为正整数" };
+        }
+        return { value: n };
+    })();
+    if (normalizedPerPersonCost && normalizedPerPersonCost.error) {
+        return res.status(400).json({ error: normalizedPerPersonCost.error });
+    }
+
     const normalizedName = normalizePlainTextField(name, {
         fieldLabel: "名称",
         maxLength: PLACE_NAME_MAX_LENGTH,
@@ -133,7 +147,7 @@ router.post("/", requireAuth, (req, res) => {
     if (normalizedLongitude.error) return res.status(400).json({ error: normalizedLongitude.error });
 
     // 将创建者同时设置为首次修改者（updated_by），并记录 updated_time
-    const sql = `INSERT INTO Place (name, description, latitude, longitude, category, exterior_images, menu_images, creator_id, updated_time, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`;
+    const sql = `INSERT INTO Place (name, description, latitude, longitude, category, exterior_images, menu_images, per_person_cost, creator_id, updated_time, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`;
     db.run(sql, [
         normalizedName.value,
         normalizedDescription.value,
@@ -142,6 +156,7 @@ router.post("/", requireAuth, (req, res) => {
         normalizedCategory.value,
         exterior_images ? JSON.stringify(exterior_images) : null,
         menu_images ? JSON.stringify(menu_images) : null,
+        normalizedPerPersonCost ? normalizedPerPersonCost.value : null,
         creatorId,
         creatorId
     ], function (err) {
@@ -178,7 +193,7 @@ router.post("/:id/requests", requireAuth, (req, res) => {
 // 更新地点（创建者或管理员）
 router.put("/:id", requireAuth, (req, res) => {
     const id = req.params.id;
-    const { name, description, category, latitude, longitude, exterior_images, menu_images } = req.body;
+    const { name, description, category, latitude, longitude, exterior_images, menu_images, per_person_cost } = req.body;
     const selPlaceSql = `SELECT p.*, u.username AS creator_name, uu.username AS updated_by_name
                         FROM Place p
                         LEFT JOIN User u ON p.creator_id = u.id
@@ -200,6 +215,15 @@ router.put("/:id", requireAuth, (req, res) => {
         if (longitude != null) { fields.push("longitude = ?"); values.push(longitude); }
         if (exterior_images !== undefined) { fields.push("exterior_images = ?"); values.push(exterior_images ? JSON.stringify(exterior_images) : null); }
         if (menu_images !== undefined) { fields.push("menu_images = ?"); values.push(menu_images ? JSON.stringify(menu_images) : null); }
+        if (per_person_cost !== undefined) {
+            if (per_person_cost === null || per_person_cost === '') {
+                fields.push("per_person_cost = ?"); values.push(null);
+            } else {
+                const n = parseInt(per_person_cost, 10);
+                if (!Number.isInteger(n) || n <= 0) return res.status(400).json({ error: "人均价格需为正整数" });
+                fields.push("per_person_cost = ?"); values.push(n);
+            }
+        }
         if (fields.length === 0) return res.status(400).json({ error: "没有提供要更新的字段" });
 
         // 更新 updated_time 和 updated_by

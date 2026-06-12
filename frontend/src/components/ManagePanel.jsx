@@ -172,6 +172,23 @@ export default function ManagePanel({
                     <label style={{ display: "block", fontSize: 12, color: dark ? '#9ca3af' : '#666' }}>描述</label>
                     <TextArea value={manageEdit.description} onChange={(e) => setManageEdit(me => ({ ...me, description: e.target.value }))} style={{ width: "100%", border: dark ? '1px solid #334155' : undefined, background: dark ? '#07101a' : undefined, color: dark ? '#e5e7eb' : undefined }} />
                 </div>
+                <div style={{ marginTop: 8 }}>
+                    <label style={{ display: "block", fontSize: 12, color: dark ? '#9ca3af' : '#666' }}>人均（元）</label>
+                    <TextInput
+                        value={manageEdit.per_person_cost != null ? String(manageEdit.per_person_cost) : ''}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === '') {
+                                setManageEdit(me => ({ ...me, per_person_cost: null }));
+                            } else if (/^[1-9]\d*$/.test(v)) {
+                                setManageEdit(me => ({ ...me, per_person_cost: parseInt(v, 10) }));
+                            }
+                        }}
+                        style={{ width: "100%" }}
+                        placeholder="可选，正整数"
+                        inputMode="numeric"
+                    />
+                </div>
                 <ScrollableView style={{ marginTop: 8, maxHeight: "150px", overflowY: "auto" }}>
                     <PlaceImageInputs backendUrl={backendUrl} token={token} images={manageEdit.exterior_images || []} setImages={(imgs) => setManageEdit(me => ({ ...me, exterior_images: imgs }))} label="外观/招牌图片（可选）" />
                     <PlaceImageInputs backendUrl={backendUrl} token={token} images={manageEdit.menu_images || []} setImages={(imgs) => setManageEdit(me => ({ ...me, menu_images: imgs }))} label="菜单图片" />
