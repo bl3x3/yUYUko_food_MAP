@@ -546,7 +546,7 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
                 setPopupPoint(point);
             };
             handleUpdateLabels = () => {
-                const currentPlaces = placesRef.current;
+                const currentPlaces = searchResultsRef.current != null ? searchResultsRef.current : placesRef.current;
                 const visibleIds = visibleIndividualIdsRef.current;
                 const container = containerRef.current;
                 if (!currentPlaces || currentPlaces.length === 0) {
@@ -929,6 +929,10 @@ export default function MapView({ backendUrl, token, isAuthenticated, onRequireA
         if (!mapRef.current) return;
         const listToRender = searchResults == null ? places : searchResults;
         renderMarkers(mapRef.current, markersRef, listToRender || [], showPopup);
+        // 同步更新标签，避免旧标签残留
+        setTimeout(() => {
+            if (handleUpdateLabelsRef.current) handleUpdateLabelsRef.current();
+        }, 50);
     }, [searchResults, places, dark]);
 
     const submitPlace = async (payload) => {
