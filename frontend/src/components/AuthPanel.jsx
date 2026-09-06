@@ -4,7 +4,7 @@ import defaultAvatar from '../img/default.png';
 import { DEFAULT_DARK_PRIMARY, DEFAULT_PRIMARY, isDarkMode, pickContrastTextColor } from '../utils/theme';
 import useMediaQuery from '../utils/useMediaQuery';
 
-const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth, onOpenAdmin, onOpenSettings, onOpenDinners, onOpenPosterExport, onGoHome, onMenuOpenChange, pathname, backendUrl, interactionDisabled = false }, forwardedRef) {
+const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogout, onOpenAuth, onOpenAdmin, onOpenSettings, onOpenDinners, onOpenPosterExport, onOpenRandomFood, onGoHome, onMenuOpenChange, pathname, backendUrl, interactionDisabled = false }, forwardedRef) {
     const [userOpen, setUserOpen] = useState(false);
     const [moreOpen, setMoreOpen] = useState(false);
     const [showUsername, setShowUsername] = useState(true);
@@ -247,6 +247,11 @@ const AuthPanel = forwardRef(function AuthPanel({ user, isAuth, isAdmin, onLogou
                 </Button>
                 {moreOpen && (
                     <div role="menu" aria-label="更多功能" style={{ ...menuStyle, right: 0 }}>
+                        {onOpenRandomFood && (
+                            <Button themeAware variant="menu" full onClick={() => { setMoreOpen(false); onOpenRandomFood(); }}>
+                                随机美食 (beta)
+                            </Button>
+                        )}
                         {isAuth && (
                             <Button themeAware variant="menu" full onClick={() => { setMoreOpen(false); isOnDinners ? onGoHome?.() : onOpenDinners?.(); }}>
                                 {isOnDinners ? '返回地图' : '聚餐活动 (beta)'}
