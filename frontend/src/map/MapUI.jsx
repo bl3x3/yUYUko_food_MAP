@@ -12,6 +12,7 @@ import { fetchFavorites } from './api';
 import { pickContrastTextColor } from '../utils/theme';
 import defaultAvatar from '../img/default.png';
 import AlongRoutePanel from './AlongRoutePanel';
+import RandomFoodPanel from './RandomFoodPanel';
 
 const POPUP_GHOST_CLICK_GUARD_MS = 400;
 const ICP_BEIAN_TEXT = import.meta.env.VITE_ICP_BEIAN_TEXT;
@@ -184,6 +185,7 @@ export default function MapUI(props) {
         customThemeSecondary,
         onAlongRouteResults,
         onSelectAlongRoutePlace,
+        onSelectRandomPlace,
         markerLabels,
         authPending,
         handleLocateMe,
@@ -225,6 +227,7 @@ export default function MapUI(props) {
         onOpenAdmin,
         onOpenPosterExport,
         desktopHeaderMenu,
+        randomFoodRequestId = 0,
         pickerMode,
         pickerContext,
         pickedPlaces,
@@ -276,6 +279,8 @@ export default function MapUI(props) {
     const [navPickerOpen, setNavPickerOpen] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
     const [alongRouteOpen, setAlongRouteOpen] = useState(false);
+    const [randomFoodOpen, setRandomFoodOpen] = useState(false);
+    const handledRandomFoodRequest = useRef(0);
     const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= 640);
     const inputRef = useRef(null);
     const popupRef = useRef(null);
@@ -334,9 +339,11 @@ export default function MapUI(props) {
         setMobileMoreOpen(false);
         setMobileAccountOpen(false);
         setAlongRouteOpen(false);
+        setRandomFoodOpen(false);
     };
 
     const openAlongRoute = () => {
+        setRandomFoodOpen(false);
         setAlongRouteOpen(true);
         setFavPageOpen(false);
         setPickedPageOpen(false);
@@ -347,7 +354,26 @@ export default function MapUI(props) {
 
     const closeAlongRoute = () => setAlongRouteOpen(false);
 
+    const openRandomFood = () => {
+        setAlongRouteOpen(false);
+        setFavPageOpen(false);
+        setPickedPageOpen(false);
+        setMobileMoreOpen(false);
+        setMobileAccountOpen(false);
+        closePopup?.();
+        if (addMode) handleToggleAddMode();
+        clearSearch?.();
+        setRandomFoodOpen(true);
+    };
+
+    useEffect(() => {
+        if (!mapReady || !randomFoodRequestId || handledRandomFoodRequest.current === randomFoodRequestId) return;
+        handledRandomFoodRequest.current = randomFoodRequestId;
+        openRandomFood();
+    }, [randomFoodRequestId, mapReady]);
+
     const toggleMobileMore = () => {
+        setRandomFoodOpen(false);
         setMobileMoreOpen((open) => !open);
         setMobileAccountOpen(false);
         setFavPageOpen(false);
@@ -359,6 +385,7 @@ export default function MapUI(props) {
     };
 
     const toggleMobileAccount = () => {
+        setRandomFoodOpen(false);
         if (!isAuthenticated) {
             onOpenMine?.();
             return;
@@ -982,6 +1009,12 @@ export default function MapUI(props) {
                 onSelectPlace={onSelectAlongRoutePlace}
             />
 
+            {randomFoodOpen && !pickerMode && <RandomFoodPanel
+                mapRef={mapRef} backendUrl={backendUrl} isNarrow={isNarrow}
+                placement={desktopHeaderMenu === 'more' ? 'left' : 'right'}
+                onClose={() => setRandomFoodOpen(false)} onSelectPlace={onSelectRandomPlace}
+            />}
+
             {!hideNonSearchButtons && isNarrow && !pickerMode && (
                 <div style={{ position: 'absolute', right: 12, bottom: 130, zIndex: 2000 }}>
                     <Tooltip text={locating ? '正在定位' : '定位/我的位置'} placement="top">
@@ -1259,6 +1292,9 @@ export default function MapUI(props) {
                                     style={{ padding: '2px 8px', background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', fontSize: 18, lineHeight: 1, cursor: 'pointer' }}
                                 >×</Button>
                             </div>
+                            <Button themeAware variant="menu" full disabled={!mapReady} onClick={() => runMobileMoreAction(openRandomFood)}>
+                                随机美食 (beta)
+                            </Button>
                             {isAuthenticated && (
                                 <Button themeAware variant="menu" full onClick={() => runMobileMoreAction(onOpenDinners)}>
                                     聚餐活动 (beta)

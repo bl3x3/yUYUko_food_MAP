@@ -49,6 +49,7 @@ export default function MapView({
     onOpenAdmin,
     onOpenPosterExport,
     desktopHeaderMenu = null,
+    randomFoodRequestId = 0,
     pickerMode = false,
     pickerContext = 'dinner',
     pickedPlaces = [],
@@ -992,6 +993,14 @@ export default function MapView({
         window.setTimeout(() => showPopup(place, { lng, lat }), 80);
     };
 
+    const handleSelectRandomPlace = (place) => {
+        clearSearchState({ reloadPlaces: false });
+        setAlongRouteResults(null);
+        setSearchResults([place]);
+        armSkipAutoSearch();
+        handleSelectAlongRoutePlace(place);
+    };
+
     const submitPlace = async (payload) => {
         if (!token) {
             onRequireAuth && onRequireAuth();
@@ -1637,6 +1646,7 @@ export default function MapView({
                 customThemeSecondary={customThemeSecondary}
                 onAlongRouteResults={handleAlongRouteResults}
                 onSelectAlongRoutePlace={handleSelectAlongRoutePlace}
+                onSelectRandomPlace={handleSelectRandomPlace}
                 markerLabels={markerLabels}
                 authPending={authPending}
                 handleLocateMe={handleLocateMe}
@@ -1678,6 +1688,7 @@ export default function MapView({
                 onOpenAdmin={onOpenAdmin}
                 onOpenPosterExport={onOpenPosterExport}
                 desktopHeaderMenu={desktopHeaderMenu}
+                randomFoodRequestId={randomFoodRequestId}
                 pickerMode={pickerMode}
                 pickerContext={pickerContext}
                 pickedPlaces={pickedPlaces}

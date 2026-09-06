@@ -67,6 +67,7 @@ export default function App() {
     const [showAuth, setShowAuth] = useState(false);
     const [authPanelDisabled, setAuthPanelDisabled] = useState(false);
     const [desktopHeaderMenu, setDesktopHeaderMenu] = useState(null);
+    const [randomFoodRequestId, setRandomFoodRequestId] = useState(0);
     const [siteNotice, setSiteNotice] = useState(null);
     const [dismissedNoticeId, setDismissedNoticeId] = useState(() => {
         try {
@@ -520,6 +521,7 @@ export default function App() {
                                 }}
                                 onLogout={handleLogout}
                                 desktopHeaderMenu={desktopHeaderMenu}
+                                randomFoodRequestId={randomFoodRequestId}
                             />
                         </div>
 
@@ -710,6 +712,7 @@ export default function App() {
                             onOpenPosterExport={() => goPath('/posters/new')}
                             onGoHome={() => goPath("/")}
                             onMenuOpenChange={setDesktopHeaderMenu}
+                            onOpenRandomFood={showMapPage ? () => setRandomFoodRequestId((id) => id + 1) : undefined}
                             pathname={pathname}
                             backendUrl={BACKEND_URL}
                             interactionDisabled={authPanelDisabled}

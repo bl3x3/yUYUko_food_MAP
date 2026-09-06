@@ -6,6 +6,7 @@ const { hasPermission } = require("../utils/adminPermissions");
 const { queuePlaceVectorSync, deletePlaceVector } = require('../services/placeVectorService');
 const { normalizeImageUrls } = require('../utils/imageUrls');
 const { createPlaceRequest } = require('../services/placeRequestService');
+const { nearbyCandidates, drawRecommendation } = require('../services/randomRecommendation');
 
 const PLACE_NAME_MAX_LENGTH = 120;
 const PLACE_CATEGORY_MAX_LENGTH = 240;
@@ -116,6 +117,31 @@ router.get("/nearby", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
+});
+
+// Random discovery queries the full 5 km circle, independently of map zoom.
+router.get("/random", (req, res) => {
+    const coordinate = (value, limit) => typeof value === 'string' && value.trim() !== ''
+        && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= limit;
+    if (!coordinate(req.query.lat, 90) || !coordinate(req.query.lng, 180)) {
+        return res.status(400).json({ error: '地图中心坐标无效' });
+    }
+    const rawIds = req.query.excludeIds;
+    if (rawIds !== undefined && (typeof rawIds !== 'string' || !/^\d+(,\d+)?$/.test(rawIds))) {
+        return res.status(400).json({ error: '最近推荐地点参数无效' });
+    }
+    const excludedIds = rawIds ? rawIds.split(',').map(Number) : [];
+    if (excludedIds.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
+        return res.status(400).json({ error: '最近推荐地点参数无效' });
+    }
+    res.set('Cache-Control', 'no-store');
+    try {
+        const center = { lat: Number(req.query.lat), lng: Number(req.query.lng) };
+        res.json(drawRecommendation(nearbyCandidates(db._raw, center), excludedIds));
+    } catch (error) {
+        console.error('随机推荐失败', error);
+        res.status(500).json({ error: '随机推荐加载失败，请稍后重试' });
+    }
 });
 
 // 获取单个地点

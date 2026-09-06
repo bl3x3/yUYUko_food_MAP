@@ -4,6 +4,18 @@ export async function fetchPlaces(backendUrl) {
     return res.json();
 }
 
+export async function fetchRandomPlace(backendUrl, center, excludedIds = [], { signal } = {}) {
+    const params = new URLSearchParams({ lat: String(center.lat), lng: String(center.lng) });
+    if (excludedIds.length) params.set('excludeIds', excludedIds.slice(-2).join(','));
+    const res = await fetch(`${backendUrl}/places/random?${params}`, { signal, cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || '随机推荐加载失败，请稍后重试');
+    if (!Number.isInteger(data.candidateCount) || !Object.prototype.hasOwnProperty.call(data, 'place')) {
+        throw new Error('随机推荐返回异常，请稍后重试');
+    }
+    return data;
+}
+
 export async function fetchPlacesNearby(backendUrl, { minLng, minLat, maxLng, maxLat }) {
     const params = new URLSearchParams({
         minLng: String(minLng),
