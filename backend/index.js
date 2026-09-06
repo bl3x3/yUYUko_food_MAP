@@ -29,12 +29,14 @@ const adminNoticesRouter = require('./routes/admin/adminNotices');
 const placeRequestsRouter = require("./routes/placeRequests");
 const dinnersRouter = require("./routes/dinners");
 const favoritesRouter = require("./routes/favorites");
+const preferencesRouter = require('./routes/preferences');
 const noticesRouter = require("./routes/notices");
 const categoriesRouter = require("./routes/categories");
 const alongRouteRouter = require("./routes/alongRoute");
 const { requireAuth } = require("./middleware/auth");
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { startVectorRetryWorker } = require('./services/placeVectorService');
+const { startUserVectorWorker } = require('./services/userPreferenceService');
 
 const app = express();
 // When running behind an HTTPS reverse proxy (e.g. nginx), enable trust proxy
@@ -246,6 +248,7 @@ app.use("/api/admin/notices", requireAuth, adminNoticesRouter);
 
 init();
 startVectorRetryWorker();
+const stopUserVectorWorker = startUserVectorWorker();
 
 app.use('/api', searchRouter);
 app.use('/api/along-route', alongRouteRouter);
@@ -262,6 +265,7 @@ app.use("/api/place-requests", placeRequestsRouter); // 兼容前端或旧接口
 app.use("/dinners", dinnersRouter);
 app.use("/api/dinners", dinnersRouter);
 app.use("/api/favorites", favoritesRouter);
+app.use('/api/preferences', preferencesRouter);
 
 app.get("/", (req, res) => res.json({ ok: true, msg: "yUYUko Food Map Backend" }));
 
@@ -293,6 +297,7 @@ let shutdownStarted = false;
 function gracefulShutdown(signal) {
     if (shutdownStarted) return;
     shutdownStarted = true;
+    stopUserVectorWorker();
     logger.info('Backend shutdown started', { event: 'server.shutdown', signal });
     const forceExit = setTimeout(() => process.exit(1), 5000);
     server.close(async (error) => {

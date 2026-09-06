@@ -704,6 +704,7 @@ function init() {
         // tables that still declare user UUID references as INTEGER, preserving
         // rows, explicit indexes, triggers and AUTOINCREMENT values.
         migrateUserReferenceColumnsToText();
+        require('./services/userPreferenceSchema').initUserPreferenceSchema(rawDb);
         rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_sitenotice_active_created_time ON SiteNotice(is_active, created_time DESC);`);
         rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_adminaudit_request_id ON AdminAudit(request_id);`);
         rawDb.exec(`CREATE INDEX IF NOT EXISTS idx_adminaudit_admin_time ON AdminAudit(admin_id, time DESC);`);

@@ -9,6 +9,7 @@
         "test:migration": "node scripts/test_database_migration.js",
         "test:transactions": "node scripts/test_transactions.js",
         "test:search": "node scripts/test_search_smoke.js",
+        "test:preferences": "node scripts/test_preferences.js",
         "vectors:backfill": "node scripts/backfill_place_vectors.js"
     },
     "dependencies": {

@@ -12,6 +12,7 @@ import { fetchFavorites } from './api';
 import { pickContrastTextColor } from '../utils/theme';
 import defaultAvatar from '../img/default.png';
 import AlongRoutePanel from './AlongRoutePanel';
+import { recordPlaceBehavior, sharePlaceContent, copyPlaceContent } from './placeBehavior';
 
 const POPUP_GHOST_CLICK_GUARD_MS = 400;
 const ICP_BEIAN_TEXT = import.meta.env.VITE_ICP_BEIAN_TEXT;
@@ -126,7 +127,7 @@ async function copyToClipboard(text) {
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        try { document.execCommand('copy'); return true; } catch (e2) { return false; }
+        try { return document.execCommand('copy'); } catch (e2) { return false; }
         finally { document.body.removeChild(textarea); }
     }
 }
@@ -247,8 +248,34 @@ export default function MapUI(props) {
 
     const hasNavigationTarget = navigationTargets.length > 0;
 
+    const recordSelectedPlaceBehavior = (eventType, channel) => {
+        if (!isAuthenticated || authPending || currentUser?.is_banned || selectedPlace?.isMarked === false) return;
+        void recordPlaceBehavior(backendUrl, token, selectedPlace?.id, eventType, channel);
+    };
+
+    const handleSharePlace = async (channel) => {
+        // Capture the place/auth closure before the OS share UI can change focus.
+        const record = recordSelectedPlaceBehavior;
+        const isAmap = channel === 'amap';
+        const url = isAmap ? buildAmapShareUrl(selectedPlace) : buildPlaceShareUrl(selectedPlace);
+        const title = isAmap ? `导航到 ${selectedPlace.name}` : selectedPlace.name;
+        const text = isAmap
+            ? `导航到 ${selectedPlace.name}${selectedPlace.address ? ' · ' + selectedPlace.address : ''} — 使用高德地图一键导航`
+            : `${selectedPlace.name}${selectedPlace.category ? ' · ' + selectedPlace.category : ''}${selectedPlace.description ? ' · ' + selectedPlace.description : ''} — 东方饭联地图，与饭搭子发现身边好店`;
+        setShareOpen(false);
+        const result = await sharePlaceContent({
+            data: { title, text, url },
+            nativeShare: navigator.share ? (data) => navigator.share(data) : null,
+            copy: copyToClipboard,
+            record,
+            channel
+        });
+        if (result === 'copied' && showTip) showTip(isAmap ? '高德导航链接已复制到剪贴板' : '分享链接已复制到剪贴板');
+    };
+
     const openNavigationTarget = (target) => {
         if (!target || !target.url) return;
+        recordSelectedPlaceBehavior('navigation', target.id);
 
         if (isMobile && target.prefersLocationHref) {
             window.location.href = target.url;
@@ -1695,21 +1722,7 @@ export default function MapUI(props) {
                                 icon="share"
                                 label="分享到 QQ / 微信"
                                 description="在 QQ 或微信中打开，会自动显示地点详情卡片"
-                                onClick={() => {
-                                    const url = buildPlaceShareUrl(selectedPlace);
-                                    if (navigator.share) {
-                                        setShareOpen(false);
-                                        const shareText = selectedPlace.description
-                                            ? `${selectedPlace.name} · ${selectedPlace.category || ''} · ${selectedPlace.description} — 上东方饭联地图发现更多美食`
-                                            : `${selectedPlace.name}${selectedPlace.category ? ' · ' + selectedPlace.category : ''} — 东方饭联地图，与饭搭子发现身边好店`;
-                                        navigator.share({ title: selectedPlace.name, text: shareText, url }).catch(() => { });
-                                    } else {
-                                        copyToClipboard(url).then(ok => {
-                                            if (ok && showTip) showTip('分享链接已复制到剪贴板');
-                                        });
-                                        setShareOpen(false);
-                                    }
-                                }}
+                                onClick={() => handleSharePlace('place')}
                                 dark={dark}
                             />
 
@@ -1719,10 +1732,11 @@ export default function MapUI(props) {
                                 label="复制地点信息"
                                 description="复制地点名称、地址和链接到剪贴板"
                                 onClick={async () => {
+                                    const record = recordSelectedPlaceBehavior;
                                     setShareOpen(false);
                                     const info = await buildPlaceClipboardText(selectedPlace, backendUrl);
-                                    const ok = await copyToClipboard(info);
-                                    if (ok && showTip) showTip('地点信息已复制到剪贴板');
+                                    const result = await copyPlaceContent({ text: info, copy: copyToClipboard, record, channel: 'place_info' });
+                                    if (result === 'copied' && showTip) showTip('地点信息已复制到剪贴板');
                                 }}
                                 dark={dark}
                             />
@@ -1732,19 +1746,7 @@ export default function MapUI(props) {
                                 icon="navigation"
                                 label="分享高德导航链接"
                                 description="在 QQ 或微信中打开链接可跳转高德地图导航"
-                                onClick={() => {
-                                    const amapUrl = buildAmapShareUrl(selectedPlace);
-                                    if (navigator.share) {
-                                        setShareOpen(false);
-                                        const amapShareText = `导航到 ${selectedPlace.name}${selectedPlace.address ? ' · ' + selectedPlace.address : ''} — 使用高德地图一键导航`;
-                                        navigator.share({ title: `导航到 ${selectedPlace.name}`, text: amapShareText, url: amapUrl }).catch(() => { });
-                                    } else {
-                                        copyToClipboard(amapUrl).then(ok => {
-                                            if (ok && showTip) showTip('高德导航链接已复制到剪贴板');
-                                        });
-                                        setShareOpen(false);
-                                    }
-                                }}
+                                onClick={() => handleSharePlace('amap')}
                                 dark={dark}
                             />
                         </div>

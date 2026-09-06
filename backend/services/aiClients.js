@@ -314,6 +314,7 @@ async function createYuyukoReason(query, matches) {
 }
 
 module.exports = {
+    EMBEDDING_MODEL,
     EMBEDDING_DIMENSIONS,
     createEmbedding,
     createEmbeddings,
