@@ -42,6 +42,13 @@ async function main() {
             db._raw.prepare('INSERT INTO User (id, username) VALUES (?, ?)').run(`u${i}`, `user${i}`);
             db._raw.prepare('INSERT INTO Favorite (user_id, place_id) VALUES (?, ?)').run(`u${i}`, ids[0]);
         }
+        const creatorId = 'cd4d174a-89e1-4a87-8dd2-844170adfe3b';
+        const editorId = 'd923b8ae-f432-47a8-a690-cf01d450a97a';
+        db._raw.prepare('INSERT INTO User (id, username) VALUES (?, ?), (?, ?)')
+            .run(creatorId, '地点创建者', editorId, '最后编辑者');
+        for (const id of ids) {
+            db._raw.prepare('UPDATE Place SET creator_id = ?, updated_by = ? WHERE id = ?').run(creatorId, editorId, id);
+        }
         const candidates = nearbyCandidates(db._raw, center);
         assert.deepEqual(candidates.map(({ place }) => place.id).sort((a, b) => a - b), ids);
         assert.equal(candidates.find(({ place }) => place.id === ids[0]).place.favorite_count, 5);
@@ -131,11 +138,16 @@ async function main() {
         assert.equal(body.candidateCount, 5);
         assert.ok(ids.slice(2).includes(body.place.id));
         assert.ok(body.distanceKm <= 5);
+        assert.equal(body.place.creator_name, '地点创建者', 'random place details must include the creator username');
+        assert.equal(body.place.updated_by_name, '最后编辑者', 'the popup must receive the editor username instead of falling back to a UUID');
+        assert.equal(body.place.updated_by, editorId, 'user IDs must still be available for permission checks');
         const token = (id) => jwt.sign({ id }, process.env.JWT_SECRET || 'yuyuko_secret_key', { expiresIn: 3600 });
         const authenticated = await fetch(`${url}?lat=0&lng=0`, { headers: { Authorization: `Bearer ${token('u0')}` } });
         const authenticatedBody = await authenticated.json();
         assert.equal(authenticated.status, 200);
         assert.equal(authenticatedBody.personalized, true, 'saved favorites must affect random recommendations');
+        assert.equal(authenticatedBody.place.creator_name, '地点创建者');
+        assert.equal(authenticatedBody.place.updated_by_name, '最后编辑者', 'personalized drawing must preserve display names');
         assert.equal('vector' in authenticatedBody, false);
         assert.equal('user_id' in authenticatedBody, false);
         db._raw.prepare('INSERT INTO User (id, username) VALUES (?, ?)').run('no-preferences', 'no-preferences');
@@ -169,6 +181,11 @@ async function main() {
             await fetchRandomPlace('https://example.test', center);
             assert.equal(frontendRequest[1].headers, undefined, 'guest requests must not send an invalid token');
         } finally { global.fetch = nativeFetch; }
+        // Missing user records must not remove an otherwise eligible restaurant.
+        db._raw.prepare('DELETE FROM User WHERE id IN (?, ?)').run(creatorId, editorId);
+        const orphaned = nearbyCandidates(db._raw, center);
+        assert.equal(orphaned.length, 5);
+        assert.ok(orphaned.every(({ place }) => place.creator_name === null && place.updated_by_name === null));
         db._raw.prepare('DELETE FROM Place WHERE id = ?').run(ids[4]);
         const sparse = await (await fetch(`${url}?lat=0&lng=0`)).json();
         assert.deepEqual(sparse, { place: null, candidateCount: 4, message: EMPTY_MESSAGE });

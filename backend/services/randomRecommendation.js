@@ -85,9 +85,12 @@ function nearbyCandidates(database, center) {
             params.push(center.lng - lngDelta, center.lng + lngDelta);
         }
     }
-    const rows = database.prepare(`SELECT p.*,
+    const rows = database.prepare(`SELECT p.*, u.username AS creator_name, uu.username AS updated_by_name,
         (SELECT COUNT(DISTINCT f.user_id) FROM Favorite f WHERE f.place_id = p.id) AS favorite_count
-        FROM Place p WHERE p.latitude BETWEEN ? AND ?${longitudeFilter}
+        FROM Place p
+        LEFT JOIN User u ON p.creator_id = u.id
+        LEFT JOIN User uu ON p.updated_by = uu.id
+        WHERE p.latitude BETWEEN ? AND ?${longitudeFilter}
         AND instr(COALESCE(p.category, ''), '避雷') = 0`).all(...params);
     return rows.flatMap((place) => {
         const distanceKm = haversineDistanceKm(center, { lat: place.latitude, lng: place.longitude });
